@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats, getHistoricalXP, getTotalHistoricalXP } from '@/lib/storage'
+import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats, getHistoricalXP, getTotalHistoricalXP, toggleHabitActive } from '@/lib/storage'
 import type { Habit, HistoricalXP } from '@/lib/storage'
 
 const EXAMPLE_HABITS = [
@@ -19,6 +19,7 @@ export default function HabitsPage() {
   const [habits, setHabits] = useState<Habit[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showHistoricalXP, setShowHistoricalXP] = useState(false)
+  const [showInactive, setShowInactive] = useState(false) // Toggle to show/hide inactive habits
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitDescription, setNewHabitDescription] = useState('')
   const [newHabitXP, setNewHabitXP] = useState(20)
@@ -77,6 +78,16 @@ export default function HabitsPage() {
     }
   }
 
+  const handleToggleActive = (habitId: string) => {
+    toggleHabitActive(habitId)
+    setHabits(getHabits())
+  }
+
+  // Filter habits based on active state
+  const activeHabits = habits.filter(h => h.isActive !== false)
+  const inactiveHabits = habits.filter(h => h.isActive === false)
+  const displayedHabits = showInactive ? habits : activeHabits
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       <div className="text-center mb-12 sm:mb-16 animate-fade-in">
@@ -102,6 +113,15 @@ export default function HabitsPage() {
         >
           {showHistoricalXP ? 'Hide' : '📊 View Historical XP'}
         </Button>
+        {inactiveHabits.length > 0 && (
+          <Button
+            onClick={() => setShowInactive(!showInactive)}
+            size="lg"
+            variant="secondary"
+          >
+            {showInactive ? 'Hide Inactive' : `Show Inactive (${inactiveHabits.length})`}
+          </Button>
+        )}
       </div>
 
       {/* Create Habit Form */}
@@ -202,9 +222,9 @@ export default function HabitsPage() {
       )}
 
       {/* User Habits List */}
-      {habits.length > 0 && (
+      {displayedHabits.length > 0 && !showHistoricalXP && (
         <div className="space-y-6">
-          {habits.map((habit, index) => {
+          {displayedHabits.map((habit, index) => {
             const streak = getHabitStreak(habit.id)
             const loggedToday = isHabitLoggedToday(habit.id)
             const startDate = new Date(habit.startDate).toLocaleDateString('en-US', { 
@@ -238,7 +258,7 @@ export default function HabitsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-3 sm:flex-col sm:gap-2">
+                    <div className="flex gap-3 sm:flex-col sm:gap-2">
                     {loggedToday ? (
                       <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-2xl font-bold text-center shadow-premium text-sm sm:text-base">
                         ✓ Logged Today
@@ -252,6 +272,14 @@ export default function HabitsPage() {
                         Log Today
                       </Button>
                     )}
+                    <Button
+                      onClick={() => handleToggleActive(habit.id)}
+                      size="md"
+                      variant="secondary"
+                      className="w-full sm:w-auto"
+                    >
+                      {habit.isActive !== false ? 'Deactivate' : 'Activate'}
+                    </Button>
                     <Button
                       onClick={() => handleDeleteHabit(habit.id)}
                       size="md"

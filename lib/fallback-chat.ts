@@ -159,3 +159,4 @@ export function getFallbackResponse(context: ChatContext): string {
   return "I'm here to support you on your digital wellness journey. Whether you're working on reducing screen time, building better habits, or just checking in with yourself, every small step counts. What's on your mind today? Feel free to share what you're thinking about, and I'll do my best to help."
 }
 
+

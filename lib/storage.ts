@@ -23,6 +23,7 @@ const STORAGE_KEYS = {
   STATS: 'cambiora_stats',
   HABITS: 'cambiora_habits',
   HABIT_LOGS: 'cambiora_habit_logs',
+  CHALLENGE_SELECTIONS: 'cambiora_challenge_selections', // Which challenges are selected/active
 } as const
 
 export interface Habit {
@@ -33,6 +34,7 @@ export interface Habit {
   createdAt: string
   startDate: string // Date when user started the habit (can be in the past)
   color?: string
+  isActive?: boolean // Whether the habit is currently selected/active (default: true)
 }
 
 export interface HabitLog {
@@ -72,8 +74,8 @@ export function getChallengeCompletions(): ChallengeCompletion[] {
   return data ? JSON.parse(data) : []
 }
 
-export function completeChallenge(challengeId: string, xpReward: number): void {
-  if (typeof window === 'undefined') return
+export function completeChallenge(challengeId: string, xpReward: number): { success: boolean; message?: string } {
+  if (typeof window === 'undefined') return { success: false, message: 'Cannot complete challenge on server' }
   
   const today = new Date().toISOString().split('T')[0]
   const completions = getChallengeCompletions()
@@ -83,7 +85,12 @@ export function completeChallenge(challengeId: string, xpReward: number): void {
     c => c.challengeId === challengeId && c.date === today
   )
   
-  if (alreadyCompleted) return
+  if (alreadyCompleted) {
+    return { 
+      success: false, 
+      message: "You've already completed this challenge today. Come back tomorrow to keep your streak going." 
+    }
+  }
   
   completions.push({ challengeId, date: today, xp: xpReward })
   localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
@@ -92,29 +99,44 @@ export function completeChallenge(challengeId: string, xpReward: number): void {
   const stats = getStats()
   stats.xp += xpReward
   
-  // Update streak
+  // Update streak logic: day-by-day basis
+  // Only ONE completion per calendar day counts toward the streak
   const lastDate = stats.lastCompletionDate
-  const todayDate = new Date(today)
   
   if (lastDate) {
-    const lastCompletionDate = new Date(lastDate)
-    const daysDiff = Math.floor((todayDate.getTime() - lastCompletionDate.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (daysDiff === 1) {
-      // Consecutive day
-      stats.currentStreak += 1
-    } else if (daysDiff > 1) {
-      // Streak broken
-      stats.currentStreak = 1
+    // If today === lastCompletionDate: don't increment streak (already counted today)
+    if (today === lastDate) {
+      // Same day - streak already counted, don't change it
+      // But still save the completion and XP
+    } else {
+      // Calculate days difference
+      const todayDate = new Date(today)
+      todayDate.setHours(0, 0, 0, 0)
+      const lastCompletionDate = new Date(lastDate)
+      lastCompletionDate.setHours(0, 0, 0, 0)
+      
+      const timeDiff = todayDate.getTime() - lastCompletionDate.getTime()
+      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
+      
+      if (daysDiff === 1) {
+        // Exactly 1 day after last completion - increment streak
+        stats.currentStreak += 1
+        stats.lastCompletionDate = today
+      } else if (daysDiff > 1) {
+        // Skipped at least one full day - reset streak to 1
+        stats.currentStreak = 1
+        stats.lastCompletionDate = today
+      }
+      // If daysDiff < 0 (future date), shouldn't happen, but don't change streak
     }
-    // If daysDiff === 0, same day, don't change streak
   } else {
-    // First completion
+    // First completion ever
     stats.currentStreak = 1
+    stats.lastCompletionDate = today
   }
   
-  stats.lastCompletionDate = today
   saveStats(stats)
+  return { success: true }
 }
 
 export function getStats(): Stats {
@@ -176,18 +198,23 @@ export function getHabits(): Habit[] {
   const data = localStorage.getItem(STORAGE_KEYS.HABITS)
   const habits: Habit[] = data ? JSON.parse(data) : []
   
-  // Migrate old habits that don't have startDate
+  // Migrate old habits that don't have startDate or isActive
   let needsUpdate = false
   const today = new Date().toISOString().split('T')[0]
   const migratedHabits = habits.map(habit => {
+    const updates: Partial<Habit> = {}
+    
     if (!habit.startDate) {
       needsUpdate = true
-      return {
-        ...habit,
-        startDate: habit.createdAt ? habit.createdAt.split('T')[0] : today,
-      }
+      updates.startDate = habit.createdAt ? habit.createdAt.split('T')[0] : today
     }
-    return habit
+    
+    if (habit.isActive === undefined) {
+      needsUpdate = true
+      updates.isActive = true // Default to active for backward compatibility
+    }
+    
+    return Object.keys(updates).length > 0 ? { ...habit, ...updates } : habit
   })
   
   if (needsUpdate) {
@@ -208,6 +235,7 @@ export function createHabit(habit: Omit<Habit, 'id' | 'createdAt'>): Habit {
     id: `habit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     createdAt: new Date().toISOString(),
     startDate: startDate,
+    isActive: habit.isActive !== undefined ? habit.isActive : true, // Default to active
   }
   
   const habits = getHabits()
@@ -229,6 +257,17 @@ export function deleteHabit(habitId: string): void {
   // Also remove all logs for this habit
   const logs = getHabitLogs().filter(l => l.habitId !== habitId)
   localStorage.setItem(STORAGE_KEYS.HABIT_LOGS, JSON.stringify(logs))
+}
+
+export function toggleHabitActive(habitId: string): void {
+  if (typeof window === 'undefined') return
+  
+  const habits = getHabits()
+  const habit = habits.find(h => h.id === habitId)
+  if (!habit) return
+  
+  habit.isActive = !(habit.isActive ?? true) // Toggle, defaulting to true if undefined
+  localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits))
 }
 
 export function getHabitLogs(): HabitLog[] {
@@ -417,4 +456,40 @@ export function getOverallStats(): Stats {
     currentStreak: overallStreak, // Use overall streak from earliest start date
     lastCompletionDate: baseStats.lastCompletionDate,
   }
+}
+
+// Challenge Selection Functions
+export function getChallengeSelections(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  const data = localStorage.getItem(STORAGE_KEYS.CHALLENGE_SELECTIONS)
+  if (!data) return new Set() // All challenges are selected by default
+  const selectedIds: string[] = JSON.parse(data)
+  return new Set(selectedIds)
+}
+
+export function setChallengeSelections(selectedIds: Set<string>): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEYS.CHALLENGE_SELECTIONS, JSON.stringify(Array.from(selectedIds)))
+}
+
+export function toggleChallengeSelection(challengeId: string): void {
+  if (typeof window === 'undefined') return
+  const selections = getChallengeSelections()
+  
+  // If challenge is in selections, remove it; otherwise add it
+  if (selections.has(challengeId)) {
+    selections.delete(challengeId)
+  } else {
+    selections.add(challengeId)
+  }
+  
+  setChallengeSelections(selections)
+}
+
+export function isChallengeSelected(challengeId: string): boolean {
+  const selections = getChallengeSelections()
+  // If selections is empty, all challenges are selected by default
+  // If selections has items, only those in the set are selected
+  if (selections.size === 0) return true
+  return selections.has(challengeId)
 }
