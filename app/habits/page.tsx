@@ -20,6 +20,7 @@ export default function HabitsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showHistoricalXP, setShowHistoricalXP] = useState(false)
   const [showInactive, setShowInactive] = useState(false) // Toggle to show/hide inactive habits
+  const [errorMessages, setErrorMessages] = useState<Record<string, string>>({}) // Error messages for each habit
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitDescription, setNewHabitDescription] = useState('')
   const [newHabitXP, setNewHabitXP] = useState(20)
@@ -67,8 +68,34 @@ export default function HabitsPage() {
   }
 
   const handleLogHabit = (habitId: string) => {
-    logHabit(habitId)
-    setHabits(getHabits()) // Refresh to update streaks
+    // Clear any existing error message for this habit
+    setErrorMessages(prev => {
+      const newMessages = { ...prev }
+      delete newMessages[habitId]
+      return newMessages
+    })
+
+    const result = logHabit(habitId)
+    
+    if (!result.success && result.message) {
+      // Show error message
+      setErrorMessages(prev => ({
+        ...prev,
+        [habitId]: result.message || '',
+      }))
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => {
+        setErrorMessages(prev => {
+          const newMessages = { ...prev }
+          delete newMessages[habitId]
+          return newMessages
+        })
+      }, 5000)
+    } else {
+      // Success - refresh habits to update UI
+      setHabits(getHabits())
+    }
   }
 
   const handleDeleteHabit = (habitId: string) => {
@@ -227,6 +254,7 @@ export default function HabitsPage() {
           {displayedHabits.map((habit, index) => {
             const streak = getHabitStreak(habit.id)
             const loggedToday = isHabitLoggedToday(habit.id)
+            const errorMessage = errorMessages[habit.id]
             const startDate = new Date(habit.startDate).toLocaleDateString('en-US', { 
               year: 'numeric', 
               month: 'short', 
@@ -235,30 +263,40 @@ export default function HabitsPage() {
             
             return (
               <Card key={habit.id} hover className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.1}s` }}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-4 mb-2">
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{habit.name}</h3>
-                      <span className="px-3 sm:px-4 py-1 sm:py-1.5 gradient-primary text-white rounded-full text-xs sm:text-sm font-bold shadow-md whitespace-nowrap flex-shrink-0">
-                        +{habit.xpPerDay} XP/day
-                      </span>
-                    </div>
-                    {habit.description && (
-                      <p className="text-gray-700 text-base sm:text-lg leading-relaxed break-words mb-3">
-                        {habit.description}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">🔥</span>
-                        <span className="font-bold text-gray-900">{streak} day streak</span>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-4 mb-2">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{habit.name}</h3>
+                        <span className="px-3 sm:px-4 py-1 sm:py-1.5 gradient-primary text-white rounded-full text-xs sm:text-sm font-bold shadow-md whitespace-nowrap flex-shrink-0">
+                          +{habit.xpPerDay} XP/day
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="text-sm">Started: {startDate}</span>
+                      {habit.description && (
+                        <p className="text-gray-700 text-base sm:text-lg leading-relaxed break-words mb-3">
+                          {habit.description}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🔥</span>
+                          <span className="font-bold text-gray-900">{streak} day streak</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <span className="text-sm">Started: {startDate}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                    <div className="flex gap-3 sm:flex-col sm:gap-2">
+
+                  {/* Error Message */}
+                  {errorMessage && (
+                    <div className="p-4 bg-amber-50 border-2 border-amber-200/50 rounded-2xl">
+                      <p className="text-sm text-amber-900 font-medium">{errorMessage}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 sm:flex-col sm:gap-2">
                     {loggedToday ? (
                       <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-2xl font-bold text-center shadow-premium text-sm sm:text-base">
                         ✓ Logged Today

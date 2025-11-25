@@ -276,15 +276,20 @@ export function getHabitLogs(): HabitLog[] {
   return data ? JSON.parse(data) : []
 }
 
-export function logHabit(habitId: string): void {
-  if (typeof window === 'undefined') return
+export function logHabit(habitId: string): { success: boolean; message?: string } {
+  if (typeof window === 'undefined') return { success: false, message: 'Cannot log habit on server' }
   
   const today = new Date().toISOString().split('T')[0]
   const logs = getHabitLogs()
   
-  // Check if already logged today
+  // Check if already logged today - enforce 24-hour rule
   const alreadyLogged = logs.some(l => l.habitId === habitId && l.date === today)
-  if (alreadyLogged) return
+  if (alreadyLogged) {
+    return { 
+      success: false, 
+      message: "You've already logged this habit today. You can log it again tomorrow to continue your streak!" 
+    }
+  }
   
   logs.push({ habitId, date: today })
   localStorage.setItem(STORAGE_KEYS.HABIT_LOGS, JSON.stringify(logs))
@@ -318,7 +323,10 @@ export function logHabit(habitId: string): void {
     }
     
     saveStats(stats)
+    return { success: true }
   }
+  
+  return { success: false, message: 'Habit not found' }
 }
 
 export function getHabitStreak(habitId: string): number {
