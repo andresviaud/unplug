@@ -119,7 +119,7 @@ export default function ChatPage() {
           </div>
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200/50 rounded-3xl">
             <p className="text-sm text-blue-900 font-medium">
-              <strong className="font-bold">AI-Powered:</strong> This chatbot uses OpenAI for personalized responses when available, with an intelligent fallback system for helpful support anytime.
+              <strong className="font-bold">Powered by OpenAI</strong>
             </p>
           </div>
         </div>
