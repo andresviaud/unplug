@@ -29,16 +29,24 @@ const STORAGE_KEYS = {
 /**
  * Get today's date in Eastern Time (EST/EDT) as YYYY-MM-DD string
  * Eastern Time is UTC-5 (EST) or UTC-4 (EDT during daylight saving)
+ * Uses America/New_York timezone which automatically handles EST/EDT transitions
  */
 export function getTodayEST(): string {
   const now = new Date()
-  // Convert to Eastern Time
-  const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
   
-  // Format as YYYY-MM-DD
-  const year = estDate.getFullYear()
-  const month = String(estDate.getMonth() + 1).padStart(2, '0')
-  const day = String(estDate.getDate()).padStart(2, '0')
+  // Use Intl.DateTimeFormat to get date components in Eastern Time
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  
+  // Format: "MM/DD/YYYY" or "M/D/YYYY"
+  const parts = formatter.formatToParts(now)
+  const year = parts.find(p => p.type === 'year')?.value || ''
+  const month = parts.find(p => p.type === 'month')?.value?.padStart(2, '0') || ''
+  const day = parts.find(p => p.type === 'day')?.value?.padStart(2, '0') || ''
   
   return `${year}-${month}-${day}`
 }
