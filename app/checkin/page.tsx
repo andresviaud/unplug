@@ -74,7 +74,9 @@ export default function CheckInPage() {
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    // Format date string (YYYY-MM-DD) directly to avoid timezone issues
+    const [year, month, day] = dateString.split('-')
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
     return date.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 

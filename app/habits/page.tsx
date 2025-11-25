@@ -255,11 +255,17 @@ export default function HabitsPage() {
             const streak = getHabitStreak(habit.id)
             const loggedToday = isHabitLoggedToday(habit.id)
             const errorMessage = errorMessages[habit.id]
-            const startDate = new Date(habit.startDate).toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'short', 
-              day: 'numeric' 
-            })
+            // Format date string (YYYY-MM-DD) directly to avoid timezone issues
+            const formatStartDate = (dateStr: string) => {
+              const [year, month, day] = dateStr.split('-')
+              const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+              return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              })
+            }
+            const startDate = formatStartDate(habit.startDate)
             
             return (
               <Card key={habit.id} hover className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.1}s` }}>
@@ -430,7 +436,10 @@ function HistoricalXPView() {
           sortedDates.map(date => {
             const xpEntries = groupedByDate[date]
             const dayTotal = xpEntries.reduce((sum, xp) => sum + xp.xp, 0)
-            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+            // Format date string (YYYY-MM-DD) directly to avoid timezone issues
+            const [year, month, day] = date.split('-')
+            const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+            const formattedDate = dateObj.toLocaleDateString('en-US', {
               weekday: 'short',
               year: 'numeric',
               month: 'short',
