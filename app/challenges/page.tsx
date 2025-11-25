@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
-import { toggleChallengeCompletion, getStats, getTotalChallengesCompleted, getChallengeCompletions, getTodayEST } from '@/lib/storage'
+import { toggleChallengeCompletion, getOverallStats, getTotalChallengesCompleted, getChallengeCompletions, getTodayEST } from '@/lib/storage'
 import type { Stats } from '@/lib/storage'
 
 interface Challenge {
@@ -68,7 +68,7 @@ export default function ChallengesPage() {
   const intervalRefs = useRef<Record<string, NodeJS.Timeout>>({})
 
   useEffect(() => {
-    setStats(getStats())
+    setStats(getOverallStats()) // Use overall stats for accurate XP from historical data
     setTotalChallenges(getTotalChallengesCompleted())
     
     const today = getTodayEST()
@@ -175,7 +175,7 @@ export default function ChallengesPage() {
       }, 5000)
     } else {
       // Success - update UI
-      setStats(getStats())
+      setStats(getOverallStats()) // Use overall stats for accurate XP from historical data
       setTotalChallenges(getTotalChallengesCompleted())
       
       const today = getTodayEST()
