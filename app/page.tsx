@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
-import { getTodayCheckIn, getStats, getTotalChallengesCompleted, exportUserData, importUserData } from '@/lib/storage'
+import { getTodayCheckIn, getStats, getTotalChallengesCompleted } from '@/lib/storage'
 import type { CheckIn, Stats } from '@/lib/storage'
 
 export default function Dashboard() {
@@ -19,42 +19,6 @@ export default function Dashboard() {
     setTotalChallenges(getTotalChallengesCompleted())
   }, [])
 
-  const handleExport = () => {
-    const data = exportUserData()
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `unplug-data-${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImport = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'application/json'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (!file) return
-      
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        try {
-          const data = JSON.parse(event.target?.result as string)
-          importUserData(data)
-          // Refresh the page to show updated data
-          window.location.reload()
-        } catch (error) {
-          alert('Error importing data. Please make sure the file is valid.')
-        }
-      }
-      reader.readAsText(file)
-    }
-    input.click()
-  }
 
   const moodEmojis: Record<string, string> = {
     'Very Low': '😔',
@@ -153,25 +117,6 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Data Management Section */}
-      <div className="mt-16 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-        <Card>
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Data Management</h3>
-          <p className="text-gray-600 mb-6">
-            Export your data to save a backup, or import previously saved data to restore your progress.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleExport} variant="secondary" size="md" className="flex items-center justify-center gap-2">
-              <span>📥</span>
-              Export Data
-            </Button>
-            <Button onClick={handleImport} variant="secondary" size="md" className="flex items-center justify-center gap-2">
-              <span>📤</span>
-              Import Data
-            </Button>
-          </div>
-        </Card>
-      </div>
     </div>
   )
 }
