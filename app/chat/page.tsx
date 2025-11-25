@@ -28,32 +28,6 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messages])
 
-  const getFallbackResponse = (userText: string): string => {
-    const lowerText = userText.toLowerCase()
-    
-    if (
-      lowerText.includes('stress') ||
-      lowerText.includes('stressed') ||
-      lowerText.includes('anxious') ||
-      lowerText.includes('anxiety') ||
-      lowerText.includes('overwhelmed') ||
-      lowerText.includes('sad') ||
-      lowerText.includes('depressed')
-    ) {
-      return "I hear you're going through a tough time. It's okay to feel this way. Consider taking a short break from your screens—maybe step outside for a few minutes, take some deep breaths, or do something that brings you joy. Remember, your feelings are valid. Would you like to talk more about what's on your mind?"
-    }
-    
-    if (lowerText.includes('screen time') || lowerText.includes('phone') || lowerText.includes('device')) {
-      return "Screen time can definitely impact how we feel. What specific challenges are you facing with your digital habits? Sometimes setting small boundaries—like no phone during meals or before bed—can make a big difference."
-    }
-    
-    if (lowerText.includes('sleep') || lowerText.includes('tired') || lowerText.includes('exhausted')) {
-      return "Sleep and screen time are closely connected. The blue light from screens can disrupt your sleep cycle. Try putting your devices away at least an hour before bedtime. How has your sleep been lately?"
-    }
-    
-    return "Tell me more about how your day felt. I'm here to listen and help you reflect on your digital wellness journey."
-  }
-
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
 
@@ -90,24 +64,23 @@ export default function ChatPage() {
           },
         ])
       } else {
-        // Fallback to rule-based response
-        const fallbackResponse = getFallbackResponse(userMessage.content)
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Unable to connect to AI service'
+        
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: fallbackResponse,
+            content: `I'm sorry, but I'm currently unable to respond. ${errorMessage}. Please make sure your OpenAI API key is configured in your environment variables.`,
           },
         ])
       }
     } catch (error) {
-      // Fallback to rule-based response
-      const fallbackResponse = getFallbackResponse(userMessage.content)
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: fallbackResponse,
+          content: "I'm sorry, but I encountered an error connecting to the AI service. Please check your internet connection and ensure your OpenAI API key is properly configured.",
         },
       ])
     } finally {
@@ -131,10 +104,17 @@ export default function ChatPage() {
 
       <Card className="h-[calc(100vh-280px)] sm:h-[600px] lg:h-[700px] flex flex-col animate-fade-in" style={{ animationDelay: '0.1s' }}>
         {/* Disclaimer */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-3xl">
-          <p className="text-sm text-amber-900 font-medium">
-            <strong className="font-bold">Note:</strong> Cambiora Bot is not a therapist. This is a reflective support tool.
-          </p>
+        <div className="mb-6 space-y-3">
+          <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-3xl">
+            <p className="text-sm text-amber-900 font-medium">
+              <strong className="font-bold">Note:</strong> Cambiora Bot is not a therapist. This is a reflective support tool.
+            </p>
+          </div>
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200/50 rounded-3xl">
+            <p className="text-sm text-blue-900 font-medium">
+              <strong className="font-bold">Powered by OpenAI:</strong> This chatbot uses AI to provide personalized responses. Make sure your OPENAI_API_KEY is configured in your environment variables.
+            </p>
+          </div>
         </div>
 
         {/* Chat Messages */}

@@ -5,9 +5,9 @@ export async function POST(request: NextRequest) {
   try {
     const { messages } = await request.json()
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.trim() === '') {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: 'OpenAI API key is required but not configured. Please add OPENAI_API_KEY to your environment variables.' },
         { status: 503 }
       )
     }
@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
         },
         ...messages,
       ],
-      max_tokens: 200,
-      temperature: 0.7,
+      max_tokens: 300,
+      temperature: 0.8,
     })
 
     const assistantMessage = completion.choices[0]?.message?.content
