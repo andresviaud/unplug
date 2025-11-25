@@ -18,6 +18,19 @@ body {
     min-height: 44px; /* Apple's recommended minimum touch target */
   }
 }
+
+/* Prevent text overflow */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Ensure text doesn't get cut off in containers */
+h1, h2, h3, h4, h5, h6, p, span, div {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
 }
 
 @layer utilities {

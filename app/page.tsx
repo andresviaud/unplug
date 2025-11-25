@@ -47,23 +47,23 @@ export default function Dashboard() {
           <Card className="relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
             <div className="relative">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <span className="text-3xl">{moodEmojis[todayCheckIn.mood]}</span>
-                Today's Check-In
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3 flex-wrap">
+                <span className="text-2xl sm:text-3xl">{moodEmojis[todayCheckIn.mood]}</span>
+                <span className="break-words">Today's Check-In</span>
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mood</div>
-                  <div className="text-2xl font-bold text-gray-900">{todayCheckIn.mood}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{todayCheckIn.mood}</div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Screen Time</div>
-                  <div className="text-2xl font-bold text-gray-900">{todayCheckIn.screenTime}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{todayCheckIn.screenTime}</div>
                 </div>
                 {todayCheckIn.note && (
-                  <div className="sm:col-span-2 space-y-2 pt-4 border-t border-gray-200">
+                  <div className="sm:col-span-2 space-y-2 pt-4 border-t border-gray-200 min-w-0">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Note</div>
-                    <div className="text-gray-700 leading-relaxed">{todayCheckIn.note}</div>
+                    <div className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">{todayCheckIn.note}</div>
                   </div>
                 )}
               </div>
@@ -100,17 +100,17 @@ export default function Dashboard() {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-5 justify-center items-stretch sm:items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
         <Link href="/checkin" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
-          <Button size="lg" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-base sm:text-lg">
+          <Button size="lg" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-sm sm:text-base lg:text-lg">
             Log Check-In
           </Button>
         </Link>
         <Link href="/challenges" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
-          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-base sm:text-lg">
+          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-sm sm:text-base lg:text-lg">
             View Challenges
           </Button>
         </Link>
         <Link href="/chat" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
-          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-base sm:text-lg">
+          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-sm sm:text-base lg:text-lg">
             Open Chatbot
           </Button>
         </Link>

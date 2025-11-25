@@ -129,14 +129,14 @@ export default function ChallengesPage() {
             >
               <Card hover>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3">
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{challenge.title}</h3>
-                      <span className="px-3 sm:px-4 py-1 sm:py-1.5 gradient-primary text-white rounded-full text-xs sm:text-sm font-bold shadow-md self-start sm:self-auto">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{challenge.title}</h3>
+                      <span className="px-3 sm:px-4 py-1 sm:py-1.5 gradient-primary text-white rounded-full text-xs sm:text-sm font-bold shadow-md self-start sm:self-auto whitespace-nowrap flex-shrink-0">
                         +{challenge.xp} XP
                       </span>
                     </div>
-                    <p className="text-gray-700 text-base sm:text-lg leading-relaxed">{challenge.description}</p>
+                    <p className="text-gray-700 text-base sm:text-lg leading-relaxed break-words overflow-wrap-anywhere">{challenge.description}</p>
                   </div>
                   <div className="sm:ml-6 flex-shrink-0 w-full sm:w-auto">
                     {isCompleted ? (

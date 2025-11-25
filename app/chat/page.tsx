@@ -148,13 +148,13 @@ export default function ChatPage() {
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div
-                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl sm:rounded-3xl px-4 sm:px-5 py-3 sm:py-4 shadow-lg ${
+                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl sm:rounded-3xl px-4 sm:px-5 py-3 sm:py-4 shadow-lg min-w-0 ${
                   message.role === 'user'
                     ? 'gradient-primary text-white rounded-br-md'
                     : 'bg-white/90 backdrop-blur-sm text-gray-900 rounded-bl-md border border-gray-100'
                 }`}
               >
-                <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
               </div>
             </div>
           ))}

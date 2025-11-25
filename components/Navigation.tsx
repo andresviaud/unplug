@@ -19,16 +19,18 @@ export default function Navigation() {
   return (
     <nav className="glass sticky top-0 z-50 border-b border-white/20 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-20">
-          <Logo size="md" />
+        <div className="flex justify-between items-center h-16 sm:h-20 min-w-0">
+          <div className="flex-shrink-0 min-w-0">
+            <Logo size="md" />
+          </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-2 lg:gap-6">
+          <div className="hidden md:flex gap-2 lg:gap-6 flex-shrink-0">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative text-sm lg:text-base font-semibold transition-all duration-300 px-3 py-2 rounded-xl ${
+                className={`relative text-sm lg:text-base font-semibold transition-all duration-300 px-3 py-2 rounded-xl whitespace-nowrap ${
                   pathname === link.href
                     ? 'text-primary bg-primary/10'
                     : 'text-gray-600 hover:text-primary hover:bg-primary/5'

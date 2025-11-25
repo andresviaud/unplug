@@ -22,41 +22,42 @@ export default function Logo({ className = '', size = 'md', showText = true }: L
 
   const LogoContent = () => (
     <div className={`flex items-center gap-2 sm:gap-3 ${className}`}>
-      {/* Plug Icon - Light blue with rounded shield shape */}
+      {/* Leaf Icon - Light blue minimalist leaf with white central vein */}
       <svg
         className={sizeClasses[size]}
         viewBox="0 0 60 60"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Main plug body - rounded shield shape with smooth left curve and angled right edge */}
+        {/* Leaf shape - smooth ovate, wider at top, tapering to rounded point, oriented diagonally */}
         <path
-          d="M12 25C12 20 15 15 22 15C25 15 27 17 27 20V25H32C35 25 37 27 37 30V35C37 38 35 40 32 40H27V45C27 48 25 50 22 50C15 50 12 45 12 40V25Z"
+          d="M20 12C18 18 18 25 20 32C22 38 26 44 30 46C34 48 38 46 40 40C42 33 42 26 40 20C38 14 34 10 30 8C28 7 26 7 24 8C22 9 20 10 20 12Z"
           fill="#4C9DFF"
+          transform="rotate(25 30 30)"
         />
-        {/* Left prong - extending upward and slightly right with rounded end */}
+        {/* Central vein - white line curving from top left towards bottom right */}
         <path
-          d="M18 5L20 5L20.5 8L21.5 8L22 5L24 5L23.5 17L20.5 17L20 14L19 14L18.5 17L15.5 17L15 5L18 5Z"
-          fill="#4C9DFF"
-          transform="rotate(-5 19.5 11)"
+          d="M22 18 Q28 28 32 38"
+          stroke="white"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          fill="none"
+          transform="rotate(25 30 30)"
         />
-        {/* Right prong - parallel to left, extending upward and slightly right */}
-        <path
-          d="M24 5L26 5L26.5 8L27.5 8L28 5L30 5L29.5 17L26.5 17L26 14L25 14L24.5 17L21.5 17L21 5L24 5Z"
+        {/* Petiole (stem) - short rounded stem at bottom */}
+        <ellipse
+          cx="28"
+          cy="48"
+          rx="2.5"
+          ry="1.5"
           fill="#4C9DFF"
-          transform="rotate(5 25.5 11)"
-        />
-        {/* Arrow integrated in lower-left - pointing up and right, following curve */}
-        <path
-          d="M15 38L19 34L17.5 34L17.5 30L21.5 30L21.5 34L20 34L24 38L20 42L21.5 42L21.5 46L17.5 46L17.5 42L19 42L15 38Z"
-          fill="#4C9DFF"
-          opacity="0.9"
+          transform="rotate(25 30 30)"
         />
       </svg>
       
       {/* Text - Light blue, clean sans-serif */}
       {showText && (
-        <span className={`font-bold text-primary ${textSizes[size]}`}>
+        <span className={`font-bold text-primary ${textSizes[size]} whitespace-nowrap`}>
           Unplug
         </span>
       )}

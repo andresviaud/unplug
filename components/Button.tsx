@@ -37,7 +37,7 @@ export default function Button({
       disabled={disabled}
       {...props}
     >
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 whitespace-nowrap break-words">{children}</span>
     </button>
   )
 }

@@ -93,14 +93,14 @@ export default function CheckInPage() {
                   key={m.value}
                   type="button"
                   onClick={() => setMood(m.value)}
-                  className={`px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-500 touch-manipulation ${
+                  className={`px-3 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-base transition-all duration-500 touch-manipulation whitespace-nowrap ${
                     mood === m.value
                       ? 'gradient-primary text-white shadow-premium scale-105 sm:scale-110'
                       : 'bg-white/80 backdrop-blur-sm text-gray-700 active:bg-white active:shadow-lg active:scale-95 sm:hover:bg-white sm:hover:shadow-lg sm:hover:scale-105 border border-gray-200'
                   }`}
                 >
-                  <span className="mr-2 text-xl sm:text-2xl">{m.emoji}</span>
-                  {m.value}
+                  <span className="mr-1 sm:mr-2 text-lg sm:text-xl lg:text-2xl">{m.emoji}</span>
+                  <span className="break-words">{m.value}</span>
                 </button>
               ))}
             </div>
@@ -117,7 +117,7 @@ export default function CheckInPage() {
                   key={option}
                   type="button"
                   onClick={() => setScreenTime(option)}
-                  className={`px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-500 touch-manipulation ${
+                  className={`px-3 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-base transition-all duration-500 touch-manipulation whitespace-nowrap ${
                     screenTime === option
                       ? 'gradient-primary text-white shadow-premium scale-105 sm:scale-110'
                       : 'bg-white/80 backdrop-blur-sm text-gray-700 active:bg-white active:shadow-lg active:scale-95 sm:hover:bg-white sm:hover:shadow-lg sm:hover:scale-105 border border-gray-200'
@@ -153,25 +153,25 @@ export default function CheckInPage() {
       {/* History */}
       {history.length > 0 && (
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Check-In History</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 break-words">Check-In History</h2>
           <Card>
             <div className="space-y-6">
               {history.map((checkIn, index) => (
                 <div key={checkIn.date}>
                   {index > 0 && <div className="border-t border-gray-200 my-6" />}
-                  <div className="flex items-start gap-4">
-                    <div className="text-3xl">{moodEmojis[checkIn.mood]}</div>
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="text-2xl sm:text-3xl flex-shrink-0">{moodEmojis[checkIn.mood]}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider break-words">
                         {formatDate(checkIn.date)}
                       </div>
-                      <div className="flex flex-wrap items-center gap-4 mb-2">
-                        <span className="font-bold text-lg text-gray-900">{checkIn.mood}</span>
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-2">
+                        <span className="font-bold text-base sm:text-lg text-gray-900 break-words">{checkIn.mood}</span>
                         <span className="text-gray-400">•</span>
-                        <span className="text-gray-700 font-medium">{checkIn.screenTime}</span>
+                        <span className="text-gray-700 font-medium break-words">{checkIn.screenTime}</span>
                       </div>
                       {checkIn.note && (
-                        <div className="mt-3 text-gray-600 leading-relaxed bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                        <div className="mt-3 text-gray-600 leading-relaxed bg-gray-50/50 rounded-xl p-4 border border-gray-100 break-words overflow-wrap-anywhere">
                           {checkIn.note}
                         </div>
                       )}
