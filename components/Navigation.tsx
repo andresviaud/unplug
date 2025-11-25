@@ -12,6 +12,7 @@ export default function Navigation() {
     { href: '/', label: 'Dashboard' },
     { href: '/checkin', label: 'Check-In' },
     { href: '/challenges', label: 'Challenges' },
+    { href: '/habits', label: 'Habits' },
     { href: '/chat', label: 'Chat' },
   ]
 
@@ -20,7 +21,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20 min-w-0">
           <Link href="/" className="text-2xl sm:text-3xl font-bold text-gradient hover:scale-105 transition-transform duration-300 flex-shrink-0">
-            Unplug
+            Cambiora
           </Link>
           
           {/* Desktop Navigation */}

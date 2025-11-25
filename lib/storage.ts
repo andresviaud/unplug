@@ -17,10 +17,26 @@ export interface Stats {
 }
 
 const STORAGE_KEYS = {
-  CHECKINS: 'unplug_checkins',
-  CHALLENGES: 'unplug_challenges',
-  STATS: 'unplug_stats',
+  CHECKINS: 'cambiora_checkins',
+  CHALLENGES: 'cambiora_challenges',
+  STATS: 'cambiora_stats',
+  HABITS: 'cambiora_habits',
+  HABIT_LOGS: 'cambiora_habit_logs',
 } as const
+
+export interface Habit {
+  id: string
+  name: string
+  description?: string
+  xpPerDay: number
+  createdAt: string
+  color?: string
+}
+
+export interface HabitLog {
+  habitId: string
+  date: string
+}
 
 export function getCheckIns(): CheckIn[] {
   if (typeof window === 'undefined') return []
@@ -148,4 +164,136 @@ export function clearAllData(): void {
   localStorage.removeItem(STORAGE_KEYS.CHECKINS)
   localStorage.removeItem(STORAGE_KEYS.CHALLENGES)
   localStorage.removeItem(STORAGE_KEYS.STATS)
+  localStorage.removeItem(STORAGE_KEYS.HABITS)
+  localStorage.removeItem(STORAGE_KEYS.HABIT_LOGS)
+}
+
+// Habit Tracker Functions
+export function getHabits(): Habit[] {
+  if (typeof window === 'undefined') return []
+  const data = localStorage.getItem(STORAGE_KEYS.HABITS)
+  return data ? JSON.parse(data) : []
+}
+
+export function createHabit(habit: Omit<Habit, 'id' | 'createdAt'>): Habit {
+  if (typeof window === 'undefined') throw new Error('Cannot create habit on server')
+  
+  const newHabit: Habit = {
+    ...habit,
+    id: `habit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    createdAt: new Date().toISOString(),
+  }
+  
+  const habits = getHabits()
+  habits.push(newHabit)
+  localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits))
+  
+  return newHabit
+}
+
+export function deleteHabit(habitId: string): void {
+  if (typeof window === 'undefined') return
+  
+  const habits = getHabits().filter(h => h.id !== habitId)
+  localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits))
+  
+  // Also remove all logs for this habit
+  const logs = getHabitLogs().filter(l => l.habitId !== habitId)
+  localStorage.setItem(STORAGE_KEYS.HABIT_LOGS, JSON.stringify(logs))
+}
+
+export function getHabitLogs(): HabitLog[] {
+  if (typeof window === 'undefined') return []
+  const data = localStorage.getItem(STORAGE_KEYS.HABIT_LOGS)
+  return data ? JSON.parse(data) : []
+}
+
+export function logHabit(habitId: string): void {
+  if (typeof window === 'undefined') return
+  
+  const today = new Date().toISOString().split('T')[0]
+  const logs = getHabitLogs()
+  
+  // Check if already logged today
+  const alreadyLogged = logs.some(l => l.habitId === habitId && l.date === today)
+  if (alreadyLogged) return
+  
+  logs.push({ habitId, date: today })
+  localStorage.setItem(STORAGE_KEYS.HABIT_LOGS, JSON.stringify(logs))
+  
+  // Award XP and update stats
+  const habit = getHabits().find(h => h.id === habitId)
+  if (habit) {
+    const stats = getStats()
+    stats.xp += habit.xpPerDay
+    
+    // Update streak for this specific habit
+    const habitLogs = logs.filter(l => l.habitId === habitId).sort((a, b) => a.date.localeCompare(b.date))
+    if (habitLogs.length > 0) {
+      let streak = 1
+      for (let i = habitLogs.length - 1; i > 0; i--) {
+        const currentDate = new Date(habitLogs[i].date)
+        const prevDate = new Date(habitLogs[i - 1].date)
+        const daysDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
+        
+        if (daysDiff === 1) {
+          streak++
+        } else {
+          break
+        }
+      }
+      // Update overall streak if this is the longest
+      if (streak > stats.currentStreak) {
+        stats.currentStreak = streak
+        stats.lastCompletionDate = today
+      }
+    }
+    
+    saveStats(stats)
+  }
+}
+
+export function getHabitStreak(habitId: string): number {
+  const logs = getHabitLogs()
+    .filter(l => l.habitId === habitId)
+    .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
+  
+  if (logs.length === 0) return 0
+  
+  const today = new Date().toISOString().split('T')[0]
+  let streak = 0
+  let expectedDate = today
+  
+  // Check if logged today
+  if (logs[0]?.date === today) {
+    streak = 1
+    expectedDate = new Date(today)
+    expectedDate.setDate(expectedDate.getDate() - 1)
+    expectedDate = expectedDate.toISOString().split('T')[0]
+  } else {
+    // Start from yesterday if not logged today
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    expectedDate = yesterday.toISOString().split('T')[0]
+  }
+  
+  // Count consecutive days
+  for (let i = streak > 0 ? 1 : 0; i < logs.length; i++) {
+    if (logs[i].date === expectedDate) {
+      streak++
+      const date = new Date(expectedDate)
+      date.setDate(date.getDate() - 1)
+      expectedDate = date.toISOString().split('T')[0]
+    } else {
+      break
+    }
+  }
+  
+  return streak
+}
+
+export function isHabitLoggedToday(habitId: string): boolean {
+  const today = new Date().toISOString().split('T')[0]
+  const logs = getHabitLogs()
+  return logs.some(l => l.habitId === habitId && l.date === today)
 }

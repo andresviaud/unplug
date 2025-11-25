@@ -13,7 +13,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hi! I'm Unplug Bot. How are you feeling today?",
+      content: "Hi! I'm Cambiora Bot. How are you feeling today?",
     },
   ])
   const [input, setInput] = useState('')
@@ -125,7 +125,7 @@ export default function ChatPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Unplug Bot</h1>
+        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Cambiora Bot</h1>
         <p className="text-lg sm:text-xl text-gray-700 font-light max-w-2xl mx-auto px-4">Your digital wellness companion</p>
       </div>
 
@@ -133,7 +133,7 @@ export default function ChatPage() {
         {/* Disclaimer */}
         <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-3xl">
           <p className="text-sm text-amber-900 font-medium">
-            <strong className="font-bold">Note:</strong> Unplug Bot is not a therapist. This is a reflective support tool.
+            <strong className="font-bold">Note:</strong> Cambiora Bot is not a therapist. This is a reflective support tool.
           </p>
         </div>
 

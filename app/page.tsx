@@ -33,7 +33,7 @@ export default function Dashboard() {
       {/* Hero Section */}
       <div className="text-center mb-12 sm:mb-16 animate-fade-in">
         <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">
-          Unplug
+          Cambiora
         </h1>
         <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto font-light leading-relaxed px-4">
           Digital wellness for your mind and your screen time.
@@ -106,6 +106,11 @@ export default function Dashboard() {
         <Link href="/challenges" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
           <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-sm sm:text-base lg:text-lg">
             View Challenges
+          </Button>
+        </Link>
+        <Link href="/habits" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-sm sm:text-base lg:text-lg">
+            Habit Trackers
           </Button>
         </Link>
         <Link href="/chat" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
