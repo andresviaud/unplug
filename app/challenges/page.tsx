@@ -295,7 +295,7 @@ export default function ChallengesPage() {
                     </div>
                   </div>
 
-                  {/* Complete/Uncomplete Button */}
+                  {/* Complete/Undo Button */}
                   <div className="flex justify-end">
                     <Button
                       onClick={() => handleToggleComplete(challenge)}
@@ -303,7 +303,7 @@ export default function ChallengesPage() {
                       variant={isCompleted ? "secondary" : "primary"}
                       className="w-full sm:w-auto min-w-0 sm:min-w-[140px] text-base sm:text-lg"
                     >
-                      {isCompleted ? 'Uncomplete' : 'Complete'}
+                      {isCompleted ? 'Undo' : 'Complete'}
                     </Button>
                   </div>
                 </div>
