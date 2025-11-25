@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
-import { toggleChallengeCompletion, getStats, getTotalChallengesCompleted, getChallengeCompletions } from '@/lib/storage'
+import { toggleChallengeCompletion, getStats, getTotalChallengesCompleted, getChallengeCompletions, getTodayEST } from '@/lib/storage'
 import type { Stats } from '@/lib/storage'
 
 interface Challenge {
@@ -71,7 +71,7 @@ export default function ChallengesPage() {
     setStats(getStats())
     setTotalChallenges(getTotalChallengesCompleted())
     
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayEST()
     const completions = getChallengeCompletions()
     const todayCompletions = completions
       .filter(c => c.date === today)
@@ -178,7 +178,7 @@ export default function ChallengesPage() {
       setStats(getStats())
       setTotalChallenges(getTotalChallengesCompleted())
       
-      const today = new Date().toISOString().split('T')[0]
+      const today = getTodayEST()
       const completions = getChallengeCompletions()
       const todayCompletions = completions
         .filter(c => c.date === today)

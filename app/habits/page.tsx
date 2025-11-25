@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats, getHistoricalXP, getTotalHistoricalXP, toggleHabitActive } from '@/lib/storage'
+import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats, getHistoricalXP, getTotalHistoricalXP, toggleHabitActive, getTodayEST } from '@/lib/storage'
 import type { Habit, HistoricalXP } from '@/lib/storage'
 
 const EXAMPLE_HABITS = [
@@ -24,7 +24,7 @@ export default function HabitsPage() {
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitDescription, setNewHabitDescription] = useState('')
   const [newHabitXP, setNewHabitXP] = useState(20)
-  const [newHabitStartDate, setNewHabitStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [newHabitStartDate, setNewHabitStartDate] = useState(getTodayEST())
 
   useEffect(() => {
     setHabits(getHabits())
@@ -52,7 +52,7 @@ export default function HabitsPage() {
     setNewHabitName('')
     setNewHabitDescription('')
     setNewHabitXP(20)
-    setNewHabitStartDate(new Date().toISOString().split('T')[0])
+    setNewHabitStartDate(getTodayEST())
     setShowCreateForm(false)
   }
 
@@ -61,7 +61,7 @@ export default function HabitsPage() {
       name: example.name,
       description: example.description,
       xpPerDay: example.xpPerDay,
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: getTodayEST(),
     })
 
     setHabits(getHabits())
@@ -205,7 +205,7 @@ export default function HabitsPage() {
                 type="date"
                 value={newHabitStartDate}
                 onChange={(e) => setNewHabitStartDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
+                max={getTodayEST()}
                 className="input-premium"
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -341,7 +341,7 @@ function HistoricalXPView() {
   const [historicalXP, setHistoricalXP] = useState<HistoricalXP[]>([])
   const [filteredXP, setFilteredXP] = useState<HistoricalXP[]>([])
   const [filterStartDate, setFilterStartDate] = useState('')
-  const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0])
+  const [filterEndDate, setFilterEndDate] = useState(getTodayEST())
 
   useEffect(() => {
     const xp = getHistoricalXP()

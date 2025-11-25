@@ -26,6 +26,23 @@ const STORAGE_KEYS = {
   CHALLENGE_SELECTIONS: 'cambiora_challenge_selections', // Which challenges are selected/active
 } as const
 
+/**
+ * Get today's date in Eastern Time (EST/EDT) as YYYY-MM-DD string
+ * Eastern Time is UTC-5 (EST) or UTC-4 (EDT during daylight saving)
+ */
+export function getTodayEST(): string {
+  const now = new Date()
+  // Convert to Eastern Time
+  const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+  
+  // Format as YYYY-MM-DD
+  const year = estDate.getFullYear()
+  const month = String(estDate.getMonth() + 1).padStart(2, '0')
+  const day = String(estDate.getDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
+}
+
 export interface Habit {
   id: string
   name: string
@@ -63,7 +80,7 @@ export function saveCheckIn(checkIn: CheckIn): void {
 }
 
 export function getTodayCheckIn(): CheckIn | null {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   const checkIns = getCheckIns()
   return checkIns.find(c => c.date === today) || null
 }
@@ -77,7 +94,7 @@ export function getChallengeCompletions(): ChallengeCompletion[] {
 export function toggleChallengeCompletion(challengeId: string, xpReward: number): { success: boolean; message?: string; isCompleted: boolean } {
   if (typeof window === 'undefined') return { success: false, message: 'Cannot toggle challenge on server', isCompleted: false }
   
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   const completions = getChallengeCompletions()
   
   // Check if already completed today
@@ -217,7 +234,7 @@ export function getHabits(): Habit[] {
   
   // Migrate old habits that don't have startDate or isActive
   let needsUpdate = false
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   const migratedHabits = habits.map(habit => {
     const updates: Partial<Habit> = {}
     
@@ -244,7 +261,7 @@ export function getHabits(): Habit[] {
 export function createHabit(habit: Omit<Habit, 'id' | 'createdAt'>): Habit {
   if (typeof window === 'undefined') throw new Error('Cannot create habit on server')
   
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   const startDate = habit.startDate || today
   
   const newHabit: Habit = {
@@ -296,7 +313,7 @@ export function getHabitLogs(): HabitLog[] {
 export function logHabit(habitId: string): { success: boolean; message?: string } {
   if (typeof window === 'undefined') return { success: false, message: 'Cannot log habit on server' }
   
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   const logs = getHabitLogs()
   
   // Check if already logged today - enforce 24-hour rule
@@ -372,7 +389,7 @@ export function getHabitStreak(habitId: string): number {
 }
 
 export function isHabitLoggedToday(habitId: string): boolean {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   const logs = getHabitLogs()
   return logs.some(l => l.habitId === habitId && l.date === today)
 }
@@ -435,7 +452,7 @@ export function getOverallStreak(): number {
   
   const habits = getHabits()
   const challengeCompletions = getChallengeCompletions()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayEST()
   
   // Find earliest start date from habits
   const habitDates: string[] = []

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { saveCheckIn, getCheckIns, getTodayCheckIn } from '@/lib/storage'
+import { saveCheckIn, getCheckIns, getTodayCheckIn, getTodayEST } from '@/lib/storage'
 import type { CheckIn } from '@/lib/storage'
 
 const MOODS = [
@@ -62,7 +62,7 @@ export default function CheckInPage() {
       return
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayEST()
     saveCheckIn({
       date: today,
       mood: mood || 'Okay', // Default mood if not selected
