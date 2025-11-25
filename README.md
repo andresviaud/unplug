@@ -5,9 +5,11 @@ A beautiful, modern digital wellness web application built with Next.js, React, 
 ## Features
 
 - 📊 **Dashboard** - Track your daily check-ins, XP, streaks, and completed challenges
-- ✅ **Daily Check-In** - Log your mood and screen time with optional notes
+- ✅ **Daily Check-In** - Log your mood and screen time with optional notes (dates tracked automatically)
 - 🎯 **Challenges** - Complete digital detox challenges to earn XP and build streaks
 - 💬 **AI Chatbot** - Get support and guidance with OpenAI integration (with fallback mode)
+- 📥 **Export/Import** - Backup and restore your data
+- 📅 **Date Tracking** - All entries are timestamped with dates for time-based tracking
 
 ## Tech Stack
 
@@ -15,7 +17,7 @@ A beautiful, modern digital wellness web application built with Next.js, React, 
 - **React 18** (Functional components + Hooks)
 - **TypeScript**
 - **Tailwind CSS**
-- **localStorage** for data persistence
+- **localStorage** for data persistence (device-based)
 - **OpenAI API** (optional) for AI chat
 
 ## Getting Started
@@ -90,10 +92,12 @@ unplug/
 
 ## Data Storage
 
-All data is stored in browser localStorage:
-- `unplug_checkins` - Check-in history
-- `unplug_challenges` - Challenge completions
-- `unplug_stats` - XP, streaks, and stats
+All data is stored in browser localStorage (device-specific):
+- `unplug_checkins` - Check-in history with dates (YYYY-MM-DD format)
+- `unplug_challenges` - Challenge completions with dates
+- `unplug_stats` - XP, streaks, and last completion date
+
+**Date Tracking**: All entries automatically include the date (ISO format: YYYY-MM-DD) for accurate time-based tracking. You can view your check-in history sorted by date, and streaks are calculated based on consecutive days.
 
 ## Design
 

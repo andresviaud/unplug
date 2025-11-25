@@ -114,3 +114,38 @@ export function getTotalChallengesCompleted(): number {
   const completions = getChallengeCompletions()
   return completions.length
 }
+
+export interface UserData {
+  checkins: CheckIn[]
+  challenges: ChallengeCompletion[]
+  stats: Stats
+}
+
+export function exportUserData(): UserData {
+  return {
+    checkins: getCheckIns(),
+    challenges: getChallengeCompletions(),
+    stats: getStats(),
+  }
+}
+
+export function importUserData(data: UserData): void {
+  if (typeof window === 'undefined') return
+  
+  // Validate data structure
+  if (!data.checkins || !data.challenges || !data.stats) {
+    throw new Error('Invalid data format')
+  }
+  
+  // Import data
+  localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(data.checkins))
+  localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(data.challenges))
+  localStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(data.stats))
+}
+
+export function clearAllData(): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(STORAGE_KEYS.CHECKINS)
+  localStorage.removeItem(STORAGE_KEYS.CHALLENGES)
+  localStorage.removeItem(STORAGE_KEYS.STATS)
+}
