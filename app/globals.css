@@ -134,6 +134,50 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     box-shadow: 0 30px 80px rgba(76, 157, 255, 0.2), 0 12px 35px rgba(76, 157, 255, 0.15);
   }
   
+  .shadow-soft {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  /* Premium input styling */
+  .input-premium {
+    @apply w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 text-gray-800 placeholder-gray-400;
+  }
+  
+  .input-premium:focus {
+    @apply shadow-premium;
+  }
+  
+  /* Premium error message styling */
+  .error-message {
+    @apply p-4 bg-amber-50 border-2 border-amber-200/50 rounded-2xl;
+  }
+  
+  .error-message-text {
+    @apply text-sm text-amber-900 font-medium;
+  }
+  
+  /* Premium info message styling */
+  .info-message {
+    @apply p-4 bg-blue-50 border-2 border-blue-200/50 rounded-2xl;
+  }
+  
+  .info-message-text {
+    @apply text-sm text-blue-900 font-medium;
+  }
+  
+  /* Consistent page hero styling */
+  .page-hero {
+    @apply text-center mb-12 sm:mb-16 animate-fade-in;
+  }
+  
+  .page-hero h1 {
+    @apply text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight;
+  }
+  
+  .page-hero p {
+    @apply text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-4;
+  }
+  
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }

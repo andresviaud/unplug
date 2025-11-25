@@ -10,7 +10,7 @@ export default function Navigation() {
 
   const navLinks = [
     { href: '/', label: 'Dashboard' },
-    { href: '/checkin', label: 'Check-In' },
+    { href: '/checkin', label: 'Journal' },
     { href: '/challenges', label: 'Challenges' },
     { href: '/habits', label: 'Habits' },
     { href: '/chat', label: 'Chat' },

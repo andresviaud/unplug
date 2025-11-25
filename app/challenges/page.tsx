@@ -214,9 +214,9 @@ export default function ChallengesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Challenges</h1>
-        <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto font-light leading-relaxed px-4">
+      <div className="page-hero">
+        <h1>Challenges</h1>
+        <p>
           Complete challenges to earn XP and build your streak. Each challenge helps you develop healthier digital habits.
         </p>
       </div>
@@ -291,8 +291,8 @@ export default function ChallengesPage() {
 
                   {/* Error Message */}
                   {errorMessage && (
-                    <div className="p-4 bg-amber-50 border-2 border-amber-200/50 rounded-2xl">
-                      <p className="text-sm text-amber-900 font-medium">{errorMessage}</p>
+                    <div className="error-message">
+                      <p className="error-message-text">{errorMessage}</p>
                     </div>
                   )}
 

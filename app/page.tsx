@@ -31,11 +31,9 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       {/* Hero Section */}
-      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">
-          Cambiora
-        </h1>
-        <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-4">
+      <div className="page-hero">
+        <h1>Cambiora</h1>
+        <p>
           A web app that helps you break destructive habits and build transformational, long-term change — powered by AI, science-backed psychology, and daily micro-actions.
         </p>
       </div>

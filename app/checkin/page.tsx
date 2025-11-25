@@ -99,9 +99,9 @@ export default function CheckInPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Journal</h1>
-        <p className="text-lg sm:text-xl text-gray-700 font-light max-w-2xl mx-auto px-4">
+      <div className="page-hero">
+        <h1>Journal</h1>
+        <p>
           Reflect on your day, track your progress, and build self-awareness through daily journaling.
         </p>
       </div>

@@ -104,21 +104,21 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Cambiora Bot</h1>
-        <p className="text-lg sm:text-xl text-gray-700 font-light max-w-2xl mx-auto px-4">Your digital wellness companion</p>
+      <div className="page-hero">
+        <h1>Cambiora Bot</h1>
+        <p>Your digital wellness companion</p>
       </div>
 
       <Card className="h-[calc(100vh-280px)] sm:h-[600px] lg:h-[700px] flex flex-col animate-fade-in" style={{ animationDelay: '0.1s' }}>
         {/* Disclaimer */}
         <div className="mb-6 space-y-3">
-          <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-3xl">
-            <p className="text-sm text-amber-900 font-medium">
+          <div className="error-message">
+            <p className="error-message-text">
               <strong className="font-bold">Note:</strong> Cambiora Bot is not a therapist. This is a reflective support tool.
             </p>
           </div>
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200/50 rounded-3xl">
-            <p className="text-sm text-blue-900 font-medium">
+          <div className="info-message">
+            <p className="info-message-text">
               <strong className="font-bold">Powered by OpenAI</strong>
             </p>
           </div>

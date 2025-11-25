@@ -160,25 +160,25 @@ export default function HabitsPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
                 Habit Name *
               </label>
-              <input
-                type="text"
-                value={newHabitName}
-                onChange={(e) => setNewHabitName(e.target.value)}
-                placeholder="e.g., Quit Alcohol, Exercise Daily"
-                className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 text-gray-800"
-              />
+                  <input
+                    type="text"
+                    value={newHabitName}
+                    onChange={(e) => setNewHabitName(e.target.value)}
+                    placeholder="e.g., Quit Alcohol, Exercise Daily"
+                    className="input-premium"
+                  />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
                 Description (Optional)
               </label>
-              <input
-                type="text"
-                value={newHabitDescription}
-                onChange={(e) => setNewHabitDescription(e.target.value)}
-                placeholder="Brief description of your habit"
-                className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 text-gray-800"
-              />
+                  <input
+                    type="text"
+                    value={newHabitDescription}
+                    onChange={(e) => setNewHabitDescription(e.target.value)}
+                    placeholder="Brief description of your habit"
+                    className="input-premium"
+                  />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
@@ -206,7 +206,7 @@ export default function HabitsPage() {
                 value={newHabitStartDate}
                 onChange={(e) => setNewHabitStartDate(e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
-                className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 text-gray-800"
+                className="input-premium"
               />
               <p className="text-xs text-gray-500 mt-2">
                 Select the date when you started this habit (can be in the past)
@@ -291,8 +291,8 @@ export default function HabitsPage() {
 
                   {/* Error Message */}
                   {errorMessage && (
-                    <div className="p-4 bg-amber-50 border-2 border-amber-200/50 rounded-2xl">
-                      <p className="text-sm text-amber-900 font-medium">{errorMessage}</p>
+                    <div className="error-message">
+                      <p className="error-message-text">{errorMessage}</p>
                     </div>
                   )}
 
@@ -403,7 +403,7 @@ function HistoricalXPView() {
             type="date"
             value={filterStartDate}
             onChange={(e) => setFilterStartDate(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300"
+            className="input-premium"
           />
         </div>
         <div>
@@ -415,7 +415,7 @@ function HistoricalXPView() {
             value={filterEndDate}
             onChange={(e) => setFilterEndDate(e.target.value)}
             max={new Date().toISOString().split('T')[0]}
-            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300"
+            className="input-premium"
           />
         </div>
       </div>
