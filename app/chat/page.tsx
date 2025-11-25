@@ -56,6 +56,10 @@ export default function ChatPage() {
 
       if (response.ok) {
         const data = await response.json()
+        if (!data.message) {
+          console.error('Invalid response format:', data)
+          throw new Error('Invalid response from server')
+        }
         setMessages((prev) => [
           ...prev,
           {
