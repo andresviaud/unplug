@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
-import { completeChallenge, getStats, getTotalChallengesCompleted, getChallengeCompletions, toggleChallengeSelection, isChallengeSelected, getChallengeSelections } from '@/lib/storage'
+import { toggleChallengeCompletion, getStats, getTotalChallengesCompleted, getChallengeCompletions } from '@/lib/storage'
 import type { Stats } from '@/lib/storage'
 
 interface Challenge {
@@ -65,8 +65,6 @@ export default function ChallengesPage() {
   const [completedToday, setCompletedToday] = useState<Set<string>>(new Set())
   const [timers, setTimers] = useState<Record<string, TimerState>>({})
   const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
-  const [showDeselected, setShowDeselected] = useState(false) // Toggle to show/hide deselected challenges
-  const [selectedChallenges, setSelectedChallenges] = useState<Set<string>>(new Set())
   const intervalRefs = useRef<Record<string, NodeJS.Timeout>>({})
 
   useEffect(() => {
@@ -79,22 +77,7 @@ export default function ChallengesPage() {
       .filter(c => c.date === today)
       .map(c => c.challengeId)
     setCompletedToday(new Set(todayCompletions))
-    
-    // Load challenge selections
-    setSelectedChallenges(getChallengeSelections())
   }, [])
-
-  // Filter challenges based on selection
-  // If no selections stored, all challenges are selected by default
-  const allSelected = selectedChallenges.size === 0
-  
-  const displayedChallenges = showDeselected 
-    ? CHALLENGES 
-    : CHALLENGES.filter(c => allSelected || isChallengeSelected(c.id))
-  
-  const deselectedChallenges = allSelected 
-    ? [] 
-    : CHALLENGES.filter(c => !isChallengeSelected(c.id))
 
   // Cleanup intervals on unmount
   useEffect(() => {
@@ -165,7 +148,7 @@ export default function ChallengesPage() {
     })
   }
 
-  const handleComplete = (challenge: Challenge) => {
+  const handleToggleComplete = (challenge: Challenge) => {
     // Clear any error message for this challenge
     setErrorMessages(prev => {
       const newMessages = { ...prev }
@@ -173,7 +156,7 @@ export default function ChallengesPage() {
       return newMessages
     })
 
-    const result = completeChallenge(challenge.id, challenge.xp)
+    const result = toggleChallengeCompletion(challenge.id, challenge.xp)
     
     if (!result.success && result.message) {
       // Show error message
@@ -207,11 +190,6 @@ export default function ChallengesPage() {
     }
   }
 
-  const handleToggleSelection = (challengeId: string) => {
-    toggleChallengeSelection(challengeId)
-    setSelectedChallenges(getChallengeSelections())
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       <div className="page-hero">
@@ -220,19 +198,6 @@ export default function ChallengesPage() {
           Complete challenges to earn XP and build your streak. Each challenge helps you develop healthier digital habits.
         </p>
       </div>
-
-      {/* Toggle Button for Deselected Challenges */}
-      {deselectedChallenges.length > 0 && (
-        <div className="mb-6 flex justify-center animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <Button
-            onClick={() => setShowDeselected(!showDeselected)}
-            size="md"
-            variant="secondary"
-          >
-            {showDeselected ? 'Hide Deselected' : `Show Deselected (${deselectedChallenges.length})`}
-          </Button>
-        </div>
-      )}
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-12">
@@ -261,7 +226,7 @@ export default function ChallengesPage() {
 
       {/* Challenges List */}
       <div className="space-y-6">
-        {displayedChallenges.map((challenge, index) => {
+        {CHALLENGES.map((challenge, index) => {
           const isCompleted = completedToday.has(challenge.id)
           const timer = timers[challenge.id]
           const errorMessage = errorMessages[challenge.id]
@@ -330,29 +295,16 @@ export default function ChallengesPage() {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-end">
+                  {/* Complete/Uncomplete Button */}
+                  <div className="flex justify-end">
                     <Button
-                      onClick={() => handleToggleSelection(challenge.id)}
-                      size="md"
-                      variant="secondary"
-                      className="w-full sm:w-auto"
+                      onClick={() => handleToggleComplete(challenge)}
+                      size="lg"
+                      variant={isCompleted ? "secondary" : "primary"}
+                      className="w-full sm:w-auto min-w-0 sm:min-w-[140px] text-base sm:text-lg"
                     >
-                      {isChallengeSelected(challenge.id) ? 'Deselect' : 'Select'}
+                      {isCompleted ? 'Uncomplete' : 'Complete'}
                     </Button>
-                    {isCompleted ? (
-                      <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-2xl font-bold text-center shadow-premium text-sm sm:text-base w-full sm:w-auto">
-                        ✓ Completed Today
-                      </div>
-                    ) : (
-                      <Button
-                        onClick={() => handleComplete(challenge)}
-                        size="lg"
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[140px] text-base sm:text-lg"
-                      >
-                        Complete
-                      </Button>
-                    )}
                   </div>
                 </div>
               </Card>

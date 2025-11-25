@@ -74,69 +74,86 @@ export function getChallengeCompletions(): ChallengeCompletion[] {
   return data ? JSON.parse(data) : []
 }
 
-export function completeChallenge(challengeId: string, xpReward: number): { success: boolean; message?: string } {
-  if (typeof window === 'undefined') return { success: false, message: 'Cannot complete challenge on server' }
+export function toggleChallengeCompletion(challengeId: string, xpReward: number): { success: boolean; message?: string; isCompleted: boolean } {
+  if (typeof window === 'undefined') return { success: false, message: 'Cannot toggle challenge on server', isCompleted: false }
   
   const today = new Date().toISOString().split('T')[0]
   const completions = getChallengeCompletions()
   
   // Check if already completed today
-  const alreadyCompleted = completions.some(
+  const completionIndex = completions.findIndex(
     c => c.challengeId === challengeId && c.date === today
   )
   
-  if (alreadyCompleted) {
-    return { 
-      success: false, 
-      message: "You've already completed this challenge today. Come back tomorrow to keep your streak going." 
-    }
-  }
-  
-  completions.push({ challengeId, date: today, xp: xpReward })
-  localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
-  
-  // Update stats
   const stats = getStats()
-  stats.xp += xpReward
   
-  // Update streak logic: day-by-day basis
-  // Only ONE completion per calendar day counts toward the streak
-  const lastDate = stats.lastCompletionDate
-  
-  if (lastDate) {
-    // If today === lastCompletionDate: don't increment streak (already counted today)
-    if (today === lastDate) {
-      // Same day - streak already counted, don't change it
-      // But still save the completion and XP
-    } else {
-      // Calculate days difference
-      const todayDate = new Date(today)
-      todayDate.setHours(0, 0, 0, 0)
-      const lastCompletionDate = new Date(lastDate)
-      lastCompletionDate.setHours(0, 0, 0, 0)
-      
-      const timeDiff = todayDate.getTime() - lastCompletionDate.getTime()
-      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
-      
-      if (daysDiff === 1) {
-        // Exactly 1 day after last completion - increment streak
-        stats.currentStreak += 1
-        stats.lastCompletionDate = today
-      } else if (daysDiff > 1) {
-        // Skipped at least one full day - reset streak to 1
-        stats.currentStreak = 1
-        stats.lastCompletionDate = today
-      }
-      // If daysDiff < 0 (future date), shouldn't happen, but don't change streak
-    }
+  if (completionIndex >= 0) {
+    // Already completed - uncomplete it
+    const completion = completions[completionIndex]
+    completions.splice(completionIndex, 1)
+    localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
+    
+    // Remove XP
+    stats.xp = Math.max(0, stats.xp - (completion.xp || xpReward))
+    
+    // Note: We don't adjust streak when uncompleting, as it's based on calendar days
+    // The streak logic will recalculate on next completion
+    
+    saveStats(stats)
+    return { success: true, isCompleted: false }
   } else {
-    // First completion ever
-    stats.currentStreak = 1
-    stats.lastCompletionDate = today
+    // Not completed - complete it
+    completions.push({ challengeId, date: today, xp: xpReward })
+    localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
+    
+    // Update stats
+    stats.xp += xpReward
+    
+    // Update streak logic: day-by-day basis
+    // Only ONE completion per calendar day counts toward the streak
+    const lastDate = stats.lastCompletionDate
+    
+    if (lastDate) {
+      // If today === lastCompletionDate: don't increment streak (already counted today)
+      if (today === lastDate) {
+        // Same day - streak already counted, don't change it
+        // But still save the completion and XP
+      } else {
+        // Calculate days difference
+        const todayDate = new Date(today)
+        todayDate.setHours(0, 0, 0, 0)
+        const lastCompletionDate = new Date(lastDate)
+        lastCompletionDate.setHours(0, 0, 0, 0)
+        
+        const timeDiff = todayDate.getTime() - lastCompletionDate.getTime()
+        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
+        
+        if (daysDiff === 1) {
+          // Exactly 1 day after last completion - increment streak
+          stats.currentStreak += 1
+          stats.lastCompletionDate = today
+        } else if (daysDiff > 1) {
+          // Skipped at least one full day - reset streak to 1
+          stats.currentStreak = 1
+          stats.lastCompletionDate = today
+        }
+        // If daysDiff < 0 (future date), shouldn't happen, but don't change streak
+      }
+    } else {
+      // First completion ever
+      stats.currentStreak = 1
+      stats.lastCompletionDate = today
+    }
+    
+    saveStats(stats)
+    return { success: true, isCompleted: true }
   }
-  
-  saveStats(stats)
-  return { success: true }
+}
+
+// Keep the old function for backward compatibility, but it now uses toggle
+export function completeChallenge(challengeId: string, xpReward: number): { success: boolean; message?: string } {
+  const result = toggleChallengeCompletion(challengeId, xpReward)
+  return { success: result.success, message: result.message }
 }
 
 export function getStats(): Stats {
