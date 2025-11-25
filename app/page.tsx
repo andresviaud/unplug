@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
-import { getTodayCheckIn, getStats, getTotalChallengesCompleted } from '@/lib/storage'
+import { getTodayCheckIn, getStats, getTotalChallengesCompleted, getOverallStats } from '@/lib/storage'
 import type { CheckIn, Stats } from '@/lib/storage'
 
 export default function Dashboard() {
@@ -15,7 +15,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setTodayCheckIn(getTodayCheckIn())
-    setStats(getStats())
+    setStats(getOverallStats()) // Use overall stats including historical data
     setTotalChallenges(getTotalChallengesCompleted())
   }, [])
 

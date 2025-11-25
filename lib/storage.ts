@@ -365,3 +365,56 @@ export function getTotalHistoricalXP(): number {
   const allXP = getHistoricalXP()
   return allXP.reduce((total, xp) => total + xp.xp, 0)
 }
+
+export function getOverallStreak(): number {
+  if (typeof window === 'undefined') return 0
+  
+  const habits = getHabits()
+  const challengeCompletions = getChallengeCompletions()
+  const today = new Date().toISOString().split('T')[0]
+  
+  // Find earliest start date from habits
+  const habitDates: string[] = []
+  habits.forEach(habit => {
+    if (habit.startDate) {
+      habitDates.push(habit.startDate)
+    }
+  })
+  
+  // Find earliest challenge completion date
+  const challengeDates = challengeCompletions.map(c => c.date)
+  
+  // Combine all dates and find earliest
+  const allDates = [...habitDates, ...challengeDates]
+  
+  if (allDates.length === 0) return 0
+  
+  const earliestDate = allDates.sort((a, b) => a.localeCompare(b))[0]
+  
+  if (!earliestDate) return 0
+  
+  // Calculate days since earliest date
+  const todayDate = new Date(today)
+  todayDate.setHours(0, 0, 0, 0)
+  const startDate = new Date(earliestDate)
+  startDate.setHours(0, 0, 0, 0)
+  
+  if (startDate > todayDate) return 0
+  
+  const timeDiff = todayDate.getTime() - startDate.getTime()
+  const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
+  
+  return Math.max(1, daysDiff)
+}
+
+export function getOverallStats(): Stats {
+  const baseStats = getStats()
+  const totalHistoricalXP = getTotalHistoricalXP()
+  const overallStreak = getOverallStreak()
+  
+  return {
+    xp: totalHistoricalXP, // Use total historical XP instead of just stats.xp
+    currentStreak: overallStreak, // Use overall streak from earliest start date
+    lastCompletionDate: baseStats.lastCompletionDate,
+  }
+}
