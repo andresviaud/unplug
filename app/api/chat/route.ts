@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai/index.mjs'
+import OpenAI from 'openai'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,10 +39,23 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ message: assistantMessage })
-  } catch (error) {
+  } catch (error: any) {
     console.error('OpenAI API error:', error)
+    
+    // Provide more detailed error messages
+    let errorMessage = 'Failed to get AI response'
+    if (error?.message) {
+      errorMessage = error.message
+    } else if (error?.response?.status === 401) {
+      errorMessage = 'Invalid OpenAI API key. Please check your API key.'
+    } else if (error?.response?.status === 429) {
+      errorMessage = 'OpenAI API rate limit exceeded. Please try again later.'
+    } else if (error?.response?.status === 500) {
+      errorMessage = 'OpenAI API server error. Please try again later.'
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to get AI response' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

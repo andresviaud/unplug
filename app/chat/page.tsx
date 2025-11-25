@@ -67,20 +67,23 @@ export default function ChatPage() {
         const errorData = await response.json().catch(() => ({}))
         const errorMessage = errorData.error || 'Unable to connect to AI service'
         
+        console.error('Chat API error:', errorData)
+        
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: `I'm sorry, but I'm currently unable to respond. ${errorMessage}. Please make sure your OpenAI API key is configured in your environment variables.`,
+            content: `I'm sorry, but I'm currently unable to respond. ${errorMessage}`,
           },
         ])
       }
     } catch (error) {
+      console.error('Chat fetch error:', error)
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: "I'm sorry, but I encountered an error connecting to the AI service. Please check your internet connection and ensure your OpenAI API key is properly configured.",
+          content: "I'm sorry, but I encountered an error connecting to the AI service. Please check your internet connection and ensure your OpenAI API key is properly configured. Check the browser console for more details.",
         },
       ])
     } finally {
