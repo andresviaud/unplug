@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { getFallbackResponse } from '@/lib/fallback-chat'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  let messages: Array<{ role: string; content: string }> = []
+  
   try {
-    const { messages } = await request.json()
+    const requestData = await request.json()
+    messages = requestData.messages || []
 
     // Check for API key
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey || apiKey.trim() === '') {
-      console.error('OPENAI_API_KEY is missing or empty')
-      return NextResponse.json(
-        { error: 'OpenAI API key is required but not configured. Please add OPENAI_API_KEY to your environment variables.' },
-        { status: 503 }
-      )
+    const useFallback = !apiKey || apiKey.trim() === ''
+    
+    if (useFallback) {
+      console.log('Using fallback response system (OpenAI not configured)')
+      // Use intelligent fallback
+      const fallbackMessage = getFallbackResponse({
+        messages,
+        userMessage: messages[messages.length - 1]?.content || '',
+      })
+      return NextResponse.json({ message: fallbackMessage, fallback: true })
     }
 
     // Log API key status (without exposing the key)
@@ -41,7 +49,10 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: 'You are Cambiora Bot, a supportive digital wellness assistant. You help users reflect on their screen time, mood, and digital habits. Be empathetic, encouraging, and focus on healthy digital boundaries. Keep responses concise and conversational.',
         },
-        ...messages,
+        ...messages.map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        })),
       ],
       max_tokens: 300,
       temperature: 0.8,
@@ -66,29 +77,21 @@ export async function POST(request: NextRequest) {
       type: error?.type,
     })
     
-    // Provide more detailed error messages based on OpenAI error types
-    let errorMessage = 'Failed to get AI response'
-    let statusCode = 500
-    
-    if (error?.status === 401 || error?.code === 'invalid_api_key') {
-      errorMessage = 'Invalid OpenAI API key. Please check your API key in the environment variables.'
-      statusCode = 401
-    } else if (error?.status === 429 || error?.code === 'rate_limit_exceeded') {
-      errorMessage = 'OpenAI API rate limit exceeded. Please try again later.'
-      statusCode = 429
-    } else if (error?.status === 500 || error?.code === 'server_error') {
-      errorMessage = 'OpenAI API server error. Please try again later.'
-      statusCode = 500
-    } else if (error?.message) {
-      errorMessage = `OpenAI error: ${error.message}`
-    } else if (typeof error === 'string') {
-      errorMessage = error
+    // Use fallback response when OpenAI fails
+    console.log('Falling back to intelligent response system')
+    try {
+      const fallbackMessage = getFallbackResponse({
+        messages,
+        userMessage: messages[messages.length - 1]?.content || '',
+      })
+      return NextResponse.json({ message: fallbackMessage, fallback: true })
+    } catch (fallbackError) {
+      // If fallback also fails, return error
+      return NextResponse.json(
+        { error: 'Unable to generate response. Please try again.' },
+        { status: 500 }
+      )
     }
-    
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: statusCode }
-    )
   }
 }
 
