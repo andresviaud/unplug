@@ -118,8 +118,12 @@ export function toggleChallengeCompletion(challengeId: string, xpReward: number)
     completions.splice(completionIndex, 1)
     localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
     
-    // Remove XP
-    stats.xp = Math.max(0, stats.xp - (completion.xp || xpReward))
+    // Note: XP is calculated from historical data, not stored in stats
+    // Removing the completion automatically removes XP from calculations
+    
+    // Recalculate overall streak
+    const overallStreak = getOverallStreak()
+    stats.currentStreak = overallStreak
     
     // Note: We don't adjust streak when uncompleting, as it's based on calendar days
     // The streak logic will recalculate on next completion
@@ -131,8 +135,8 @@ export function toggleChallengeCompletion(challengeId: string, xpReward: number)
     completions.push({ challengeId, date: today, xp: xpReward })
     localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
     
-    // Update stats
-    stats.xp += xpReward
+    // Note: XP is calculated from historical data, not stored in stats
+    // Adding the completion automatically adds XP to calculations
     
     // Update streak logic: day-by-day basis
     // Only ONE completion per calendar day counts toward the streak
@@ -154,21 +158,22 @@ export function toggleChallengeCompletion(challengeId: string, xpReward: number)
         const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
         
         if (daysDiff === 1) {
-          // Exactly 1 day after last completion - increment streak
-          stats.currentStreak += 1
+          // Exactly 1 day after last completion - streak continues
           stats.lastCompletionDate = today
         } else if (daysDiff > 1) {
-          // Skipped at least one full day - reset streak to 1
-          stats.currentStreak = 1
+          // Skipped at least one full day - streak resets to 1
           stats.lastCompletionDate = today
         }
         // If daysDiff < 0 (future date), shouldn't happen, but don't change streak
       }
     } else {
       // First completion ever
-      stats.currentStreak = 1
       stats.lastCompletionDate = today
     }
+    
+    // Recalculate overall streak from calendar days
+    const overallStreak = getOverallStreak()
+    stats.currentStreak = overallStreak
     
     saveStats(stats)
     return { success: true, isCompleted: true }
@@ -324,7 +329,7 @@ export function logHabit(habitId: string): { success: boolean; message?: string 
   const today = getTodayEST()
   const logs = getHabitLogs()
   
-  // Check if already logged today - enforce 24-hour rule
+  // Check if already logged today - enforce 24-hour rule (once per calendar day)
   const alreadyLogged = logs.some(l => l.habitId === habitId && l.date === today)
   if (alreadyLogged) {
     return { 
@@ -333,42 +338,30 @@ export function logHabit(habitId: string): { success: boolean; message?: string 
     }
   }
   
+  // Verify habit exists
+  const habit = getHabits().find(h => h.id === habitId)
+  if (!habit) {
+    return { success: false, message: 'Habit not found' }
+  }
+  
+  // Add log entry (XP is calculated from historical data, not stored in stats)
   logs.push({ habitId, date: today })
   localStorage.setItem(STORAGE_KEYS.HABIT_LOGS, JSON.stringify(logs))
   
-  // Award XP and update stats
-  const habit = getHabits().find(h => h.id === habitId)
-  if (habit) {
-    const stats = getStats()
-    stats.xp += habit.xpPerDay
-    
-    // Update streak for this specific habit
-    const habitLogs = logs.filter(l => l.habitId === habitId).sort((a, b) => a.date.localeCompare(b.date))
-    if (habitLogs.length > 0) {
-      let streak = 1
-      for (let i = habitLogs.length - 1; i > 0; i--) {
-        const currentDate = new Date(habitLogs[i].date)
-        const prevDate = new Date(habitLogs[i - 1].date)
-        const daysDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
-        
-        if (daysDiff === 1) {
-          streak++
-        } else {
-          break
-        }
-      }
-      // Update overall streak if this is the longest
-      if (streak > stats.currentStreak) {
-        stats.currentStreak = streak
-        stats.lastCompletionDate = today
-      }
-    }
-    
-    saveStats(stats)
-    return { success: true }
-  }
+  // Update overall streak based on calendar days
+  // Streak is calculated from the earliest activity date, not consecutive logs
+  const stats = getStats()
+  const overallStreak = getOverallStreak()
   
-  return { success: false, message: 'Habit not found' }
+  // Update stats with new overall streak
+  stats.currentStreak = overallStreak
+  stats.lastCompletionDate = today
+  
+  // Note: XP is not stored in stats.xp - it's always calculated from historical data
+  // This ensures accuracy and prevents double-counting
+  
+  saveStats(stats)
+  return { success: true }
 }
 
 export function getHabitStreak(habitId: string): number {
@@ -459,41 +452,51 @@ export function getOverallStreak(): number {
   if (typeof window === 'undefined') return 0
   
   const habits = getHabits()
+  const habitLogs = getHabitLogs()
   const challengeCompletions = getChallengeCompletions()
   const today = getTodayEST()
   
-  // Find earliest start date from habits
-  const habitDates: string[] = []
-  habits.forEach(habit => {
-    if (habit.startDate) {
-      habitDates.push(habit.startDate)
-    }
+  // Collect all activity dates (unique calendar days with at least one activity)
+  const activityDates = new Set<string>()
+  
+  // Add habit log dates
+  habitLogs.forEach(log => {
+    activityDates.add(log.date)
   })
   
-  // Find earliest challenge completion date
-  const challengeDates = challengeCompletions.map(c => c.date)
+  // Add challenge completion dates
+  challengeCompletions.forEach(completion => {
+    activityDates.add(completion.date)
+  })
   
-  // Combine all dates and find earliest
-  const allDates = [...habitDates, ...challengeDates]
+  if (activityDates.size === 0) return 0
   
-  if (allDates.length === 0) return 0
+  // Sort dates in descending order (most recent first)
+  const sortedDates = Array.from(activityDates).sort((a, b) => b.localeCompare(a))
   
-  const earliestDate = allDates.sort((a, b) => a.localeCompare(b))[0]
+  // Calculate streak: consecutive calendar days with activity, ending today
+  let streak = 0
+  let expectedDate = today
   
-  if (!earliestDate) return 0
+  for (const activityDate of sortedDates) {
+    // Only count dates up to today
+    if (activityDate > today) continue
+    
+    // Check if this date matches the expected date in our streak
+    if (activityDate === expectedDate) {
+      streak++
+      // Move to previous day
+      const date = new Date(expectedDate)
+      date.setDate(date.getDate() - 1)
+      expectedDate = date.toISOString().split('T')[0]
+    } else if (activityDate < expectedDate) {
+      // Gap found - streak is broken
+      break
+    }
+    // If activityDate > expectedDate, skip (future date or already counted)
+  }
   
-  // Calculate days since earliest date
-  const todayDate = new Date(today)
-  todayDate.setHours(0, 0, 0, 0)
-  const startDate = new Date(earliestDate)
-  startDate.setHours(0, 0, 0, 0)
-  
-  if (startDate > todayDate) return 0
-  
-  const timeDiff = todayDate.getTime() - startDate.getTime()
-  const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
-  
-  return Math.max(1, daysDiff)
+  return streak > 0 ? streak : 0
 }
 
 export function getOverallStats(): Stats {
