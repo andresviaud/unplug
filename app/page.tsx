@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
+import Logo from '@/components/Logo'
 import { getTodayCheckIn, getStats, getTotalChallengesCompleted } from '@/lib/storage'
 import type { CheckIn, Stats } from '@/lib/storage'
 
@@ -32,10 +33,8 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       {/* Hero Section */}
       <div className="text-center mb-12 sm:mb-16 lg:mb-20 animate-fade-in">
-        <div className="inline-block mb-4 sm:mb-6">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">
-            Unplug
-          </h1>
+        <div className="flex justify-center mb-4 sm:mb-6">
+          <Logo size="lg" showText={true} className="justify-center" />
         </div>
         <p className="text-lg sm:text-xl lg:text-2xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-2">
           Digital wellness for your mind and your screen time.

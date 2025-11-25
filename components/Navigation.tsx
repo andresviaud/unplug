@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Logo from './Logo'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -19,9 +20,7 @@ export default function Navigation() {
     <nav className="glass sticky top-0 z-50 border-b border-white/20 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          <Link href="/" className="text-2xl sm:text-3xl font-bold text-gradient hover:scale-105 transition-transform duration-300">
-            Unplug
-          </Link>
+          <Logo size="md" />
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex gap-2 lg:gap-6">
