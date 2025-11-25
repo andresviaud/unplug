@@ -74,10 +74,10 @@ export default function CheckInPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Daily Check-In</h1>
-        <p className="text-xl text-gray-700 font-light">How are you feeling today?</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <div className="text-center mb-8 sm:mb-12 lg:mb-16 animate-fade-in">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">Daily Check-In</h1>
+        <p className="text-lg sm:text-xl text-gray-700 font-light px-2">How are you feeling today?</p>
       </div>
 
       <Card className="mb-12 animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -87,19 +87,19 @@ export default function CheckInPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-6 uppercase tracking-wider">
               How's your mood today?
             </label>
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
               {MOODS.map((m) => (
                 <button
                   key={m.value}
                   type="button"
                   onClick={() => setMood(m.value)}
-                  className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-500 ${
+                  className={`px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-500 touch-manipulation ${
                     mood === m.value
-                      ? 'gradient-primary text-white shadow-premium scale-110'
-                      : 'bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-200'
+                      ? 'gradient-primary text-white shadow-premium scale-105 sm:scale-110'
+                      : 'bg-white/80 backdrop-blur-sm text-gray-700 active:bg-white active:shadow-lg active:scale-95 sm:hover:bg-white sm:hover:shadow-lg sm:hover:scale-105 border border-gray-200'
                   }`}
                 >
-                  <span className="mr-2 text-2xl">{m.emoji}</span>
+                  <span className="mr-2 text-xl sm:text-2xl">{m.emoji}</span>
                   {m.value}
                 </button>
               ))}
@@ -111,16 +111,16 @@ export default function CheckInPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-6 uppercase tracking-wider">
               How much screen time did you have today?
             </label>
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
               {SCREEN_TIME_OPTIONS.map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setScreenTime(option)}
-                  className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-500 ${
+                  className={`px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-500 touch-manipulation ${
                     screenTime === option
-                      ? 'gradient-primary text-white shadow-premium scale-110'
-                      : 'bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-200'
+                      ? 'gradient-primary text-white shadow-premium scale-105 sm:scale-110'
+                      : 'bg-white/80 backdrop-blur-sm text-gray-700 active:bg-white active:shadow-lg active:scale-95 sm:hover:bg-white sm:hover:shadow-lg sm:hover:scale-105 border border-gray-200'
                   }`}
                 >
                   {option}

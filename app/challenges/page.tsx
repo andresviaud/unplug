@@ -84,16 +84,16 @@ export default function ChallengesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-16 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Challenges</h1>
-        <p className="text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <div className="text-center mb-8 sm:mb-12 lg:mb-16 animate-fade-in">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">Challenges</h1>
+        <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-2">
           Complete challenges to earn XP and build your streak. Each challenge helps you develop healthier digital habits.
         </p>
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-16">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 lg:mb-16">
         <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <StatCard
             label="Total XP"
@@ -128,26 +128,26 @@ export default function ChallengesPage() {
               style={{ animationDelay: `${0.4 + index * 0.1}s` }}
             >
               <Card hover>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                   <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-3">
-                      <h3 className="text-2xl font-bold text-gray-900">{challenge.title}</h3>
-                      <span className="px-4 py-1.5 gradient-primary text-white rounded-full text-sm font-bold shadow-md">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{challenge.title}</h3>
+                      <span className="px-3 sm:px-4 py-1 sm:py-1.5 gradient-primary text-white rounded-full text-xs sm:text-sm font-bold shadow-md self-start sm:self-auto">
                         +{challenge.xp} XP
                       </span>
                     </div>
-                    <p className="text-gray-700 text-lg leading-relaxed">{challenge.description}</p>
+                    <p className="text-gray-700 text-base sm:text-lg leading-relaxed">{challenge.description}</p>
                   </div>
-                  <div className="sm:ml-6 flex-shrink-0">
+                  <div className="sm:ml-6 flex-shrink-0 w-full sm:w-auto">
                     {isCompleted ? (
-                      <div className="px-8 py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-2xl font-bold text-center shadow-lg">
+                      <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl sm:rounded-2xl font-bold text-center shadow-lg text-sm sm:text-base">
                         ✓ Completed Today
                       </div>
                     ) : (
                       <Button
                         onClick={() => handleComplete(challenge)}
                         size="lg"
-                        className="min-w-[140px]"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[140px] text-base sm:text-lg"
                       >
                         Complete
                       </Button>

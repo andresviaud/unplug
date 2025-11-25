@@ -29,15 +29,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       {/* Hero Section */}
-      <div className="text-center mb-20 animate-fade-in">
-        <div className="inline-block mb-6">
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-extrabold text-gradient mb-6 tracking-tight">
+      <div className="text-center mb-12 sm:mb-16 lg:mb-20 animate-fade-in">
+        <div className="inline-block mb-4 sm:mb-6">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">
             Unplug
           </h1>
         </div>
-        <p className="text-xl sm:text-2xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed">
+        <p className="text-lg sm:text-xl lg:text-2xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-2">
           Digital wellness for your mind and your screen time.
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <StatCard
             label="Total XP"
@@ -99,19 +99,19 @@ export default function Dashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-5 justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-        <Link href="/checkin" className="w-full sm:w-auto">
-          <Button size="lg" className="w-full sm:w-auto min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-5 justify-center items-stretch sm:items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <Link href="/checkin" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <Button size="lg" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-base sm:text-lg">
             Log Check-In
           </Button>
         </Link>
-        <Link href="/challenges" className="w-full sm:w-auto">
-          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-[200px]">
+        <Link href="/challenges" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-base sm:text-lg">
             View Challenges
           </Button>
         </Link>
-        <Link href="/chat" className="w-full sm:w-auto">
-          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-[200px]">
+        <Link href="/chat" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <Button size="lg" variant="secondary" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-base sm:text-lg">
             Open Chatbot
           </Button>
         </Link>

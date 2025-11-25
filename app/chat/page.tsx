@@ -123,13 +123,13 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-12 animate-fade-in">
-        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Unplug Bot</h1>
-        <p className="text-xl text-gray-700 font-light">Your digital wellness companion</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <div className="text-center mb-8 sm:mb-12 animate-fade-in">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">Unplug Bot</h1>
+        <p className="text-lg sm:text-xl text-gray-700 font-light px-2">Your digital wellness companion</p>
       </div>
 
-      <Card className="h-[700px] flex flex-col animate-fade-in" style={{ animationDelay: '0.1s' }}>
+      <Card className="h-[calc(100vh-280px)] sm:h-[600px] lg:h-[700px] flex flex-col animate-fade-in" style={{ animationDelay: '0.1s' }}>
         {/* Disclaimer */}
         <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-2xl">
           <p className="text-sm text-amber-900 font-medium">
@@ -148,13 +148,13 @@ export default function ChatPage() {
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div
-                className={`max-w-[85%] rounded-3xl px-5 py-4 shadow-lg ${
+                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl sm:rounded-3xl px-4 sm:px-5 py-3 sm:py-4 shadow-lg ${
                   message.role === 'user'
                     ? 'gradient-primary text-white rounded-br-md'
                     : 'bg-white/90 backdrop-blur-sm text-gray-900 rounded-bl-md border border-gray-100'
                 }`}
               >
-                <p className="text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
               </div>
             </div>
           ))}
@@ -173,21 +173,21 @@ export default function ChatPage() {
         </div>
 
         {/* Input Bar */}
-        <div className="flex gap-4 border-t-2 border-gray-200 pt-6">
+        <div className="flex gap-3 sm:gap-4 border-t-2 border-gray-200 pt-4 sm:pt-6">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             rows={2}
-            className="flex-1 px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 resize-none text-gray-800 placeholder-gray-400"
+            className="flex-1 px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 resize-none text-sm sm:text-base text-gray-800 placeholder-gray-400"
             disabled={isLoading}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="lg"
-            className="self-end min-w-[120px]"
+            className="self-end min-w-[100px] sm:min-w-[120px] text-sm sm:text-base px-4 sm:px-6"
           >
             Send
           </Button>

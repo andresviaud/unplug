@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation'
 export const metadata: Metadata = {
   title: 'Unplug - Digital Wellness',
   description: 'Digital wellness for your mind and your screen time.',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
 }
 
 export default function RootLayout({

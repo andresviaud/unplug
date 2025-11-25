@@ -3,12 +3,21 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    background: linear-gradient(135deg, #E6F3FF 0%, #D6EBFF 50%, #E6F3FF 100%);
-    background-attachment: fixed;
-    min-height: 100vh;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  background: linear-gradient(135deg, #E6F3FF 0%, #D6EBFF 50%, #E6F3FF 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 640px) {
+  button, a {
+    min-height: 44px; /* Apple's recommended minimum touch target */
   }
+}
 }
 
 @layer utilities {
