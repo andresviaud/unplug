@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
-import Logo from '@/components/Logo'
 import { getTodayCheckIn, getStats, getTotalChallengesCompleted } from '@/lib/storage'
 import type { CheckIn, Stats } from '@/lib/storage'
 
@@ -32,11 +31,11 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       {/* Hero Section */}
-      <div className="text-center mb-12 sm:mb-16 lg:mb-20 animate-fade-in">
-        <div className="flex justify-center mb-4 sm:mb-6">
-          <Logo size="lg" showText={true} className="justify-center" />
-        </div>
-        <p className="text-lg sm:text-xl lg:text-2xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-2">
+      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
+        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">
+          Unplug
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto font-light leading-relaxed px-4">
           Digital wellness for your mind and your screen time.
         </p>
       </div>
@@ -73,7 +72,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-12">
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <StatCard
             label="Total XP"
@@ -98,7 +97,7 @@ export default function Dashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-5 justify-center items-stretch sm:items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
         <Link href="/checkin" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
           <Button size="lg" className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-sm sm:text-base lg:text-lg">
             Log Check-In

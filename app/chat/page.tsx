@@ -124,9 +124,9 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-      <div className="text-center mb-8 sm:mb-12 animate-fade-in">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">Unplug Bot</h1>
-        <p className="text-lg sm:text-xl text-gray-700 font-light px-2">Your digital wellness companion</p>
+      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
+        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Unplug Bot</h1>
+        <p className="text-lg sm:text-xl text-gray-700 font-light max-w-2xl mx-auto px-4">Your digital wellness companion</p>
       </div>
 
       <Card className="h-[calc(100vh-280px)] sm:h-[600px] lg:h-[700px] flex flex-col animate-fade-in" style={{ animationDelay: '0.1s' }}>

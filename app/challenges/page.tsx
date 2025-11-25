@@ -85,15 +85,15 @@ export default function ChallengesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-      <div className="text-center mb-8 sm:mb-12 lg:mb-16 animate-fade-in">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient mb-4 sm:mb-6 tracking-tight">Challenges</h1>
-        <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-2">
+      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
+        <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Challenges</h1>
+        <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto font-light leading-relaxed px-4">
           Complete challenges to earn XP and build your streak. Each challenge helps you develop healthier digital habits.
         </p>
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 lg:mb-16">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-12">
         <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <StatCard
             label="Total XP"
