@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats } from '@/lib/storage'
-import type { Habit } from '@/lib/storage'
+import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats, getHistoricalXP, getTotalHistoricalXP } from '@/lib/storage'
+import type { Habit, HistoricalXP } from '@/lib/storage'
 
 const EXAMPLE_HABITS = [
   { name: 'Quit Alcohol', description: 'Stay alcohol-free', xpPerDay: 25 },
@@ -18,9 +18,11 @@ const EXAMPLE_HABITS = [
 export default function HabitsPage() {
   const [habits, setHabits] = useState<Habit[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showHistoricalXP, setShowHistoricalXP] = useState(false)
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitDescription, setNewHabitDescription] = useState('')
   const [newHabitXP, setNewHabitXP] = useState(20)
+  const [newHabitStartDate, setNewHabitStartDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     setHabits(getHabits())
@@ -32,16 +34,23 @@ export default function HabitsPage() {
       return
     }
 
+    if (!newHabitStartDate) {
+      alert('Please select a start date')
+      return
+    }
+
     const habit = createHabit({
       name: newHabitName.trim(),
       description: newHabitDescription.trim() || undefined,
       xpPerDay: newHabitXP,
+      startDate: newHabitStartDate,
     })
 
     setHabits(getHabits())
     setNewHabitName('')
     setNewHabitDescription('')
     setNewHabitXP(20)
+    setNewHabitStartDate(new Date().toISOString().split('T')[0])
     setShowCreateForm(false)
   }
 
@@ -50,6 +59,7 @@ export default function HabitsPage() {
       name: example.name,
       description: example.description,
       xpPerDay: example.xpPerDay,
+      startDate: new Date().toISOString().split('T')[0],
     })
 
     setHabits(getHabits())
@@ -76,14 +86,21 @@ export default function HabitsPage() {
         </p>
       </div>
 
-      {/* Create Habit Button */}
-      <div className="mb-8 flex justify-center animate-fade-in" style={{ animationDelay: '0.1s' }}>
+      {/* Action Buttons */}
+      <div className="mb-8 flex flex-col sm:flex-row justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
           size="lg"
           variant="secondary"
         >
           {showCreateForm ? 'Cancel' : '+ Create New Habit'}
+        </Button>
+        <Button
+          onClick={() => setShowHistoricalXP(!showHistoricalXP)}
+          size="lg"
+          variant="secondary"
+        >
+          {showHistoricalXP ? 'Hide' : '📊 View Historical XP'}
         </Button>
       </div>
 
@@ -133,6 +150,21 @@ export default function HabitsPage() {
                 <span>50 XP</span>
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                Start Date *
+              </label>
+              <input
+                type="date"
+                value={newHabitStartDate}
+                onChange={(e) => setNewHabitStartDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 text-gray-800"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Select the date when you started this habit (can be in the past)
+              </p>
+            </div>
             <Button onClick={handleCreateHabit} size="lg" className="w-full">
               Create Habit
             </Button>
@@ -161,12 +193,25 @@ export default function HabitsPage() {
         </Card>
       )}
 
+      {/* Historical XP View */}
+      {showHistoricalXP && (
+        <Card className="mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Historical XP Points</h2>
+          <HistoricalXPView />
+        </Card>
+      )}
+
       {/* User Habits List */}
       {habits.length > 0 && (
         <div className="space-y-6">
           {habits.map((habit, index) => {
             const streak = getHabitStreak(habit.id)
             const loggedToday = isHabitLoggedToday(habit.id)
+            const startDate = new Date(habit.startDate).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            })
             
             return (
               <Card key={habit.id} hover className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.1}s` }}>
@@ -183,10 +228,13 @@ export default function HabitsPage() {
                         {habit.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-4 text-sm">
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">🔥</span>
                         <span className="font-bold text-gray-900">{streak} day streak</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span className="text-sm">Started: {startDate}</span>
                       </div>
                     </div>
                   </div>
@@ -219,6 +267,136 @@ export default function HabitsPage() {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function HistoricalXPView() {
+  const [historicalXP, setHistoricalXP] = useState<HistoricalXP[]>([])
+  const [filteredXP, setFilteredXP] = useState<HistoricalXP[]>([])
+  const [filterStartDate, setFilterStartDate] = useState('')
+  const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0])
+
+  useEffect(() => {
+    const xp = getHistoricalXP()
+    setHistoricalXP(xp)
+    setFilteredXP(xp)
+    
+    // Set default start date to 30 days ago
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    setFilterStartDate(thirtyDaysAgo.toISOString().split('T')[0])
+  }, [])
+
+  useEffect(() => {
+    if (filterStartDate && filterEndDate) {
+      const filtered = historicalXP.filter(xp => 
+        xp.date >= filterStartDate && xp.date <= filterEndDate
+      )
+      setFilteredXP(filtered)
+    } else {
+      setFilteredXP(historicalXP)
+    }
+  }, [filterStartDate, filterEndDate, historicalXP])
+
+  const totalXP = filteredXP.reduce((sum, xp) => sum + xp.xp, 0)
+  const totalHistoricalXP = getTotalHistoricalXP()
+
+  // Group by date
+  const groupedByDate = filteredXP.reduce((acc, xp) => {
+    if (!acc[xp.date]) {
+      acc[xp.date] = []
+    }
+    acc[xp.date].push(xp)
+    return acc
+  }, {} as Record<string, HistoricalXP[]>)
+
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a))
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl border-2 border-primary/20">
+          <div className="text-sm text-gray-600 mb-1">Total Historical XP</div>
+          <div className="text-3xl font-bold text-primary">{totalHistoricalXP.toLocaleString()}</div>
+        </div>
+        <div className="p-4 bg-gradient-to-r from-green-400/10 to-green-500/5 rounded-2xl border-2 border-green-400/20">
+          <div className="text-sm text-gray-600 mb-1">XP in Selected Period</div>
+          <div className="text-3xl font-bold text-green-600">{totalXP.toLocaleString()}</div>
+        </div>
+      </div>
+
+      {/* Date Filter */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Start Date
+          </label>
+          <input
+            type="date"
+            value={filterStartDate}
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            End Date
+          </label>
+          <input
+            type="date"
+            value={filterEndDate}
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300"
+          />
+        </div>
+      </div>
+
+      {/* Historical XP List */}
+      <div className="max-h-[500px] overflow-y-auto custom-scrollbar space-y-4">
+        {sortedDates.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No XP earned in this period. Start logging your habits to earn XP!
+          </div>
+        ) : (
+          sortedDates.map(date => {
+            const xpEntries = groupedByDate[date]
+            const dayTotal = xpEntries.reduce((sum, xp) => sum + xp.xp, 0)
+            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })
+
+            return (
+              <div key={date} className="p-4 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-bold text-gray-900">{formattedDate}</div>
+                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full font-bold">
+                    +{dayTotal} XP
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {xpEntries.map((xp, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className={xp.source === 'habit' ? 'text-blue-600' : 'text-purple-600'}>
+                          {xp.source === 'habit' ? '🎯' : '🏆'}
+                        </span>
+                        <span className="text-gray-700">{xp.sourceName}</span>
+                      </div>
+                      <span className="font-semibold text-gray-900">+{xp.xp} XP</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

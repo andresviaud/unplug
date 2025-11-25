@@ -8,6 +8,7 @@ export interface CheckIn {
 export interface ChallengeCompletion {
   challengeId: string
   date: string
+  xp?: number // XP earned from this challenge (for historical tracking)
 }
 
 export interface Stats {
@@ -30,6 +31,7 @@ export interface Habit {
   description?: string
   xpPerDay: number
   createdAt: string
+  startDate: string // Date when user started the habit (can be in the past)
   color?: string
 }
 
@@ -83,7 +85,7 @@ export function completeChallenge(challengeId: string, xpReward: number): void {
   
   if (alreadyCompleted) return
   
-  completions.push({ challengeId, date: today })
+  completions.push({ challengeId, date: today, xp: xpReward })
   localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(completions))
   
   // Update stats
@@ -172,21 +174,48 @@ export function clearAllData(): void {
 export function getHabits(): Habit[] {
   if (typeof window === 'undefined') return []
   const data = localStorage.getItem(STORAGE_KEYS.HABITS)
-  return data ? JSON.parse(data) : []
+  const habits: Habit[] = data ? JSON.parse(data) : []
+  
+  // Migrate old habits that don't have startDate
+  let needsUpdate = false
+  const today = new Date().toISOString().split('T')[0]
+  const migratedHabits = habits.map(habit => {
+    if (!habit.startDate) {
+      needsUpdate = true
+      return {
+        ...habit,
+        startDate: habit.createdAt ? habit.createdAt.split('T')[0] : today,
+      }
+    }
+    return habit
+  })
+  
+  if (needsUpdate) {
+    localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(migratedHabits))
+  }
+  
+  return needsUpdate ? migratedHabits : habits
 }
 
 export function createHabit(habit: Omit<Habit, 'id' | 'createdAt'>): Habit {
   if (typeof window === 'undefined') throw new Error('Cannot create habit on server')
   
+  const today = new Date().toISOString().split('T')[0]
+  const startDate = habit.startDate || today
+  
   const newHabit: Habit = {
     ...habit,
     id: `habit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     createdAt: new Date().toISOString(),
+    startDate: startDate,
   }
   
   const habits = getHabits()
   habits.push(newHabit)
   localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits))
+  
+  // If start date is in the past, don't auto-log (user can manually log if they want)
+  // The start date is just for tracking when they actually started
   
   return newHabit
 }
@@ -296,4 +325,57 @@ export function isHabitLoggedToday(habitId: string): boolean {
   const today = new Date().toISOString().split('T')[0]
   const logs = getHabitLogs()
   return logs.some(l => l.habitId === habitId && l.date === today)
+}
+
+export interface HistoricalXP {
+  date: string
+  xp: number
+  source: string // 'habit' or 'challenge'
+  sourceName: string
+}
+
+export function getHistoricalXP(): HistoricalXP[] {
+  if (typeof window === 'undefined') return []
+  
+  const historicalXP: HistoricalXP[] = []
+  
+  // Get XP from habit logs
+  const habits = getHabits()
+  const habitLogs = getHabitLogs()
+  
+  habitLogs.forEach(log => {
+    const habit = habits.find(h => h.id === log.habitId)
+    if (habit) {
+      historicalXP.push({
+        date: log.date,
+        xp: habit.xpPerDay,
+        source: 'habit',
+        sourceName: habit.name,
+      })
+    }
+  })
+  
+  // Get XP from challenge completions
+  const challengeCompletions = getChallengeCompletions()
+  challengeCompletions.forEach(completion => {
+    historicalXP.push({
+      date: completion.date,
+      xp: completion.xp || 20, // Use stored XP or default to 20
+      source: 'challenge',
+      sourceName: `Challenge ${completion.challengeId}`,
+    })
+  })
+  
+  // Sort by date (most recent first)
+  return historicalXP.sort((a, b) => b.date.localeCompare(a.date))
+}
+
+export function getHistoricalXPByDateRange(startDate: string, endDate: string): HistoricalXP[] {
+  const allXP = getHistoricalXP()
+  return allXP.filter(xp => xp.date >= startDate && xp.date <= endDate)
+}
+
+export function getTotalHistoricalXP(): number {
+  const allXP = getHistoricalXP()
+  return allXP.reduce((total, xp) => total + xp.xp, 0)
 }
