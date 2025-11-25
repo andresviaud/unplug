@@ -93,7 +93,7 @@ export default function CheckInPage() {
                   key={m.value}
                   type="button"
                   onClick={() => setMood(m.value)}
-                  className={`px-3 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-base transition-all duration-500 touch-manipulation whitespace-nowrap ${
+                  className={`px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-xs sm:text-base transition-all duration-300 touch-manipulation whitespace-nowrap ${
                     mood === m.value
                       ? 'gradient-primary text-white shadow-premium scale-105 sm:scale-110'
                       : 'bg-white/80 backdrop-blur-sm text-gray-700 active:bg-white active:shadow-lg active:scale-95 sm:hover:bg-white sm:hover:shadow-lg sm:hover:scale-105 border border-gray-200'
@@ -117,7 +117,7 @@ export default function CheckInPage() {
                   key={option}
                   type="button"
                   onClick={() => setScreenTime(option)}
-                  className={`px-3 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-base transition-all duration-500 touch-manipulation whitespace-nowrap ${
+                  className={`px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-xs sm:text-base transition-all duration-300 touch-manipulation whitespace-nowrap ${
                     screenTime === option
                       ? 'gradient-primary text-white shadow-premium scale-105 sm:scale-110'
                       : 'bg-white/80 backdrop-blur-sm text-gray-700 active:bg-white active:shadow-lg active:scale-95 sm:hover:bg-white sm:hover:shadow-lg sm:hover:scale-105 border border-gray-200'
@@ -139,7 +139,7 @@ export default function CheckInPage() {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={5}
-              className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 resize-none text-gray-800 placeholder-gray-400"
+              className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 resize-none text-gray-800 placeholder-gray-400"
               placeholder="How did your day go? Any reflections?"
             />
           </div>
@@ -171,7 +171,7 @@ export default function CheckInPage() {
                         <span className="text-gray-700 font-medium break-words">{checkIn.screenTime}</span>
                       </div>
                       {checkIn.note && (
-                        <div className="mt-3 text-gray-600 leading-relaxed bg-gray-50/50 rounded-xl p-4 border border-gray-100 break-words overflow-wrap-anywhere">
+                        <div className="mt-3 text-gray-600 leading-relaxed bg-gray-50/50 rounded-2xl p-4 border border-gray-100 break-words overflow-wrap-anywhere">
                           {checkIn.note}
                         </div>
                       )}

@@ -30,7 +30,7 @@ export default function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative text-sm lg:text-base font-semibold transition-all duration-300 px-3 py-2 rounded-xl whitespace-nowrap ${
+                className={`relative text-sm lg:text-base font-semibold transition-all duration-300 px-3 py-2 rounded-2xl whitespace-nowrap ${
                   pathname === link.href
                     ? 'text-primary bg-primary/10'
                     : 'text-gray-600 hover:text-primary hover:bg-primary/5'
@@ -47,7 +47,7 @@ export default function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:text-primary hover:bg-primary/5 transition-colors"
+            className="md:hidden p-2 rounded-2xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all duration-300"
             aria-label="Toggle menu"
           >
             <svg
@@ -77,7 +77,7 @@ export default function Navigation() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 text-base ${
+                  className={`px-4 py-3 rounded-2xl font-semibold transition-all duration-300 text-base ${
                     pathname === link.href
                       ? 'text-primary bg-primary/10'
                       : 'text-gray-600 hover:text-primary hover:bg-primary/5'

@@ -140,7 +140,7 @@ export default function ChallengesPage() {
                   </div>
                   <div className="sm:ml-6 flex-shrink-0 w-full sm:w-auto">
                     {isCompleted ? (
-                      <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl sm:rounded-2xl font-bold text-center shadow-lg text-sm sm:text-base">
+                      <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-2xl font-bold text-center shadow-premium text-sm sm:text-base">
                         ✓ Completed Today
                       </div>
                     ) : (

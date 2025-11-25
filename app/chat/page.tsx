@@ -131,7 +131,7 @@ export default function ChatPage() {
 
       <Card className="h-[calc(100vh-280px)] sm:h-[600px] lg:h-[700px] flex flex-col animate-fade-in" style={{ animationDelay: '0.1s' }}>
         {/* Disclaimer */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-2xl">
+        <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 rounded-3xl">
           <p className="text-sm text-amber-900 font-medium">
             <strong className="font-bold">Note:</strong> Unplug Bot is not a therapist. This is a reflective support tool.
           </p>
@@ -148,7 +148,7 @@ export default function ChatPage() {
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div
-                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl sm:rounded-3xl px-4 sm:px-5 py-3 sm:py-4 shadow-lg min-w-0 ${
+                className={`max-w-[90%] sm:max-w-[85%] rounded-3xl px-4 sm:px-5 py-3 sm:py-4 shadow-premium min-w-0 ${
                   message.role === 'user'
                     ? 'gradient-primary text-white rounded-br-md'
                     : 'bg-white/90 backdrop-blur-sm text-gray-900 rounded-bl-md border border-gray-100'
@@ -180,7 +180,7 @@ export default function ChatPage() {
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             rows={2}
-            className="flex-1 px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 resize-none text-sm sm:text-base text-gray-800 placeholder-gray-400"
+            className="flex-1 px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 resize-none text-sm sm:text-base text-gray-800 placeholder-gray-400"
             disabled={isLoading}
           />
           <Button
