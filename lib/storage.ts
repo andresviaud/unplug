@@ -283,42 +283,28 @@ export function logHabit(habitId: string): void {
 }
 
 export function getHabitStreak(habitId: string): number {
-  const logs = getHabitLogs()
-    .filter(l => l.habitId === habitId)
-    .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
+  const habits = getHabits()
+  const habit = habits.find(h => h.id === habitId)
   
-  if (logs.length === 0) return 0
+  if (!habit || !habit.startDate) return 0
   
-  const today = new Date().toISOString().split('T')[0]
-  let streak = 0
-  let expectedDateStr = today
+  // Calculate days since start date
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const startDate = new Date(habit.startDate)
+  startDate.setHours(0, 0, 0, 0)
   
-  // Check if logged today
-  if (logs[0]?.date === today) {
-    streak = 1
-    const expectedDate = new Date(today)
-    expectedDate.setDate(expectedDate.getDate() - 1)
-    expectedDateStr = expectedDate.toISOString().split('T')[0]
-  } else {
-    // Start from yesterday if not logged today
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    expectedDateStr = yesterday.toISOString().split('T')[0]
-  }
+  // Don't allow future start dates
+  if (startDate > today) return 0
   
-  // Count consecutive days
-  for (let i = streak > 0 ? 1 : 0; i < logs.length; i++) {
-    if (logs[i].date === expectedDateStr) {
-      streak++
-      const date = new Date(expectedDateStr)
-      date.setDate(date.getDate() - 1)
-      expectedDateStr = date.toISOString().split('T')[0]
-    } else {
-      break
-    }
-  }
+  // Calculate difference in days
+  const timeDiff = today.getTime() - startDate.getTime()
+  const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
   
-  return streak
+  // Return the number of days that have passed since the start date
+  // If start date is today, return 1 (first day), otherwise return days passed
+  // Example: Started Oct 13, today Nov 25 = 43 days have passed
+  return Math.max(1, daysDiff)
 }
 
 export function isHabitLoggedToday(habitId: string): boolean {
