@@ -1,14 +1,14 @@
-# Unplug - Digital Wellness App
+# Cambiora - Break Destructive Habits, Build Transformational Change
 
-A beautiful, modern digital wellness web application built with Next.js, React, TypeScript, and Tailwind CSS.
+A web app that helps you break destructive habits and build transformational, long-term change — powered by AI, science-backed psychology, and daily micro-actions.
 
 ## Features
 
 - 📊 **Dashboard** - Track your daily check-ins, XP, streaks, and completed challenges
 - ✅ **Daily Check-In** - Log your mood and screen time with optional notes (dates tracked automatically)
 - 🎯 **Challenges** - Complete digital detox challenges to earn XP and build streaks
+- 🌱 **Habit Trackers** - Create custom habits (quit alcohol, quit nicotine, etc.) with daily streaks and XP rewards
 - 💬 **AI Chatbot** - Get support and guidance with OpenAI integration (with fallback mode)
-- 📥 **Export/Import** - Backup and restore your data
 - 📅 **Date Tracking** - All entries are timestamped with dates for time-based tracking
 
 ## Tech Stack
@@ -32,6 +32,7 @@ A beautiful, modern digital wellness web application built with Next.js, React, 
 ```bash
 git clone https://github.com/andresviaud/unplug.git
 cd unplug
+# Note: Repository name may still be "unplug" but app is now "Cambiora"
 ```
 
 2. Install dependencies:
@@ -85,6 +86,13 @@ unplug/
 - Build consecutive day streaks
 - Track total completions
 
+### Habit Trackers
+- Create custom habits (e.g., "Quit Alcohol", "Quit Nicotine")
+- Track daily streaks for each habit
+- Earn XP for daily habit completion
+- Set custom XP rewards (10-50 XP per day)
+- Quick-start examples for popular habits
+
 ### AI Chatbot
 - OpenAI-powered responses (when API key is provided)
 - Fallback rule-based responses (works without API key)
@@ -93,9 +101,11 @@ unplug/
 ## Data Storage
 
 All data is stored in browser localStorage (device-specific):
-- `unplug_checkins` - Check-in history with dates (YYYY-MM-DD format)
-- `unplug_challenges` - Challenge completions with dates
-- `unplug_stats` - XP, streaks, and last completion date
+- `cambiora_checkins` - Check-in history with dates (YYYY-MM-DD format)
+- `cambiora_challenges` - Challenge completions with dates
+- `cambiora_stats` - XP, streaks, and last completion date
+- `cambiora_habits` - Custom habit definitions
+- `cambiora_habit_logs` - Daily habit completion logs
 
 **Date Tracking**: All entries automatically include the date (ISO format: YYYY-MM-DD) for accurate time-based tracking. You can view your check-in history sorted by date, and streaks are calculated based on consecutive days.
 

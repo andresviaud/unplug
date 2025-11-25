@@ -3,8 +3,8 @@ import './globals.css'
 import Navigation from '@/components/Navigation'
 
 export const metadata: Metadata = {
-  title: 'Cambiora - Digital Wellness',
-  description: 'Digital wellness for your mind and your screen time.',
+  title: 'Cambiora - Break Destructive Habits, Build Transformational Change',
+  description: 'A web app that helps you break destructive habits and build transformational, long-term change — powered by AI, science-backed psychology, and daily micro-actions.',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
 }
 

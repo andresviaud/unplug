@@ -35,8 +35,8 @@ export default function Dashboard() {
         <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">
           Cambiora
         </h1>
-        <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto font-light leading-relaxed px-4">
-          Digital wellness for your mind and your screen time.
+        <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-4">
+          A web app that helps you break destructive habits and build transformational, long-term change — powered by AI, science-backed psychology, and daily micro-actions.
         </p>
       </div>
 

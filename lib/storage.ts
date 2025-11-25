@@ -262,28 +262,28 @@ export function getHabitStreak(habitId: string): number {
   
   const today = new Date().toISOString().split('T')[0]
   let streak = 0
-  let expectedDate = today
+  let expectedDateStr = today
   
   // Check if logged today
   if (logs[0]?.date === today) {
     streak = 1
-    expectedDate = new Date(today)
+    const expectedDate = new Date(today)
     expectedDate.setDate(expectedDate.getDate() - 1)
-    expectedDate = expectedDate.toISOString().split('T')[0]
+    expectedDateStr = expectedDate.toISOString().split('T')[0]
   } else {
     // Start from yesterday if not logged today
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    expectedDate = yesterday.toISOString().split('T')[0]
+    expectedDateStr = yesterday.toISOString().split('T')[0]
   }
   
   // Count consecutive days
   for (let i = streak > 0 ? 1 : 0; i < logs.length; i++) {
-    if (logs[i].date === expectedDate) {
+    if (logs[i].date === expectedDateStr) {
       streak++
-      const date = new Date(expectedDate)
+      const date = new Date(expectedDateStr)
       date.setDate(date.getDate() - 1)
-      expectedDate = date.toISOString().split('T')[0]
+      expectedDateStr = date.toISOString().split('T')[0]
     } else {
       break
     }
