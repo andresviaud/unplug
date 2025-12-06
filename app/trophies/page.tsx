@@ -50,11 +50,24 @@ export default function TrophiesPage() {
     })
   }
 
+  // Animal emojis for better visual recognition (case-insensitive matching)
   const animalEmojis: Record<string, string> = {
-    'Bird': '🐦',
-    'Fox': '🦊',
-    'Deer': '🦌',
-    'Whale': '🐋',
+    'bird': '🐦',
+    'fox': '🦊',
+    'deer': '🦌',
+    'whale': '🐋',
+    'elephant': '🐘',
+    'lion': '🦁',
+    'dolphin': '🐬',
+    'bear': '🐻',
+    'tiger': '🐯',
+    'wolf': '🐺',
+  }
+
+  // Helper function to get emoji (case-insensitive)
+  const getAnimalEmoji = (animalName: string): string => {
+    const nameLower = (animalName || '').toLowerCase().trim()
+    return animalEmojis[nameLower] || '🎨'
   }
 
   if (authLoading || loading) {
@@ -105,7 +118,7 @@ export default function TrophiesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
             {completedAnimals.map((userAnimal, index) => {
               const animal = userAnimal.animals as Animal
-              const emoji = animalEmojis[animal.name] || '🎨'
+              const emoji = getAnimalEmoji(animal.name)
               return (
                 <Card
                   key={userAnimal.id}
@@ -155,7 +168,7 @@ export default function TrophiesPage() {
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-8 sm:mb-10 tracking-tight">Upcoming Animals</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
             {lockedAnimals.map((animal, index) => {
-              const emoji = animalEmojis[animal.name] || '🎨'
+              const emoji = getAnimalEmoji(animal.name)
               return (
                 <Card
                   key={animal.id}
