@@ -257,11 +257,11 @@ function DashboardContent() {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       {/* Hero Section */}
-      <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gradient tracking-tight mb-6">
+      <div className="text-center mb-14 sm:mb-18 lg:mb-24 animate-fade-in">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gradient tracking-tight mb-6 drop-shadow-sm">
           Cambiora
         </h1>
-        <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-light">
           Break destructive habits and build transformational, long-term change — powered by AI, science-backed psychology, and daily micro-actions.
         </p>
       </div>
@@ -416,13 +416,13 @@ function DashboardContent() {
 
       {/* Animal Visual Section - One per habit */}
       {habits.filter(h => h.is_active !== false).length > 0 && (
-        <div className="mb-12 sm:mb-16 lg:mb-20 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="mb-14 sm:mb-18 lg:mb-24 animate-fade-in" style={{ animationDelay: '0.15s' }}>
           <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient tracking-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-gradient tracking-tight mb-4 drop-shadow-sm">
               Your Animal Progress
             </h2>
-            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Each habit has its own animal. Complete your habits daily to fill in the nodes and unlock trophies!
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
+              Each habit has its own unique animal. Complete your habits daily to fill in the nodes and unlock trophies! 🎯
             </p>
           </div>
           <div className={`grid gap-6 sm:gap-8 ${
@@ -442,7 +442,7 @@ function DashboardContent() {
       )}
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16 lg:mb-20">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-14 sm:mb-18 lg:mb-24">
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <StatCard
             label="Total XP"
@@ -459,36 +459,111 @@ function DashboardContent() {
         </div>
         {habits.filter(h => h.is_active !== false).length > 0 ? (
           <div className="animate-fade-in sm:col-span-2 lg:col-span-1" style={{ animationDelay: '0.4s' }}>
-            <Card hover className="group h-full flex flex-col">
-              <div className="mb-6 flex justify-center transform group-hover:scale-110 transition-transform duration-300">
-                <div className="text-5xl sm:text-6xl animate-float">
-                  🔥
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-gradient mb-6 text-center group-hover:scale-105 transition-transform duration-300 tracking-tight">
-                Habit Streaks
-              </div>
-              <div className={`flex-1 ${habits.filter(h => h.is_active !== false).length > 4 ? 'max-h-[400px] sm:max-h-[500px] overflow-y-auto custom-scrollbar pr-2' : ''}`}>
-                <div className="space-y-3">
-                  {habits.filter(h => h.is_active !== false).map((habit) => (
-                    <div 
-                      key={habit.id} 
-                      className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-white/95 via-gray-50/90 to-white/95 backdrop-blur-sm rounded-2xl border-2 border-gray-200/50 hover:border-primary/40 hover:shadow-xl hover:bg-white hover:scale-[1.02] transition-all duration-300 group/item"
-                    >
-                      <span className="text-base sm:text-lg font-bold text-gray-900 truncate flex-1 mr-4 pr-2 min-w-0">
-                        {habit.name}
-                      </span>
-                      <div className="flex items-baseline gap-2 flex-shrink-0">
-                        <span className="text-xl sm:text-2xl font-extrabold text-primary tabular-nums">
-                          {habitStreaks[habit.id] || 0}
-                        </span>
-                        <span className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                          days
-                        </span>
-                      </div>
+            <Card hover className="group h-full flex flex-col relative overflow-hidden">
+              {/* Decorative background elements */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-400/20 via-red-400/20 to-orange-500/20 rounded-full blur-3xl -mr-20 -mt-20 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-primary/10 to-indigo-400/10 rounded-full blur-2xl -ml-16 -mb-16 opacity-40" />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                {/* Header */}
+                <div className="mb-6 sm:mb-8 text-center">
+                  <div className="mb-4 flex justify-center transform group-hover:scale-110 transition-transform duration-300">
+                    <div className="text-5xl sm:text-6xl animate-float filter drop-shadow-lg">
+                      🔥
                     </div>
-                  ))}
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gradient mb-2 group-hover:scale-105 transition-transform duration-300 tracking-tight">
+                    Habit Streaks
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                    Your daily progress tracker
+                  </p>
                 </div>
+
+                {/* Streaks List */}
+                <div className={`flex-1 ${habits.filter(h => h.is_active !== false).length > 4 ? 'max-h-[420px] sm:max-h-[520px] overflow-y-auto custom-scrollbar pr-2' : ''}`}>
+                  <div className="space-y-2.5 sm:space-y-3">
+                    {habits.filter(h => h.is_active !== false).map((habit, index) => {
+                      const streak = habitStreaks[habit.id] || 0
+                      const isHighStreak = streak >= 7
+                      const isMilestone = streak > 0 && (streak % 7 === 0 || streak % 30 === 0)
+                      
+                      return (
+                        <div 
+                          key={habit.id} 
+                          className={`relative group/item overflow-hidden rounded-xl border-2 transition-all duration-300 ${
+                            isMilestone
+                              ? 'bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-orange-200/60 shadow-md hover:shadow-xl'
+                              : isHighStreak
+                              ? 'bg-gradient-to-r from-white via-orange-50/30 to-white border-orange-100/40 hover:border-orange-200/60 hover:shadow-lg'
+                              : 'bg-gradient-to-r from-white via-gray-50/50 to-white border-gray-200/50 hover:border-primary/30 hover:shadow-md'
+                          } hover:scale-[1.02] hover:bg-white`}
+                          style={{ animationDelay: `${0.45 + index * 0.05}s` }}
+                        >
+                          {/* Subtle glow effect for high streaks */}
+                          {isHighStreak && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-orange-400/5 via-transparent to-orange-400/5 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300" />
+                          )}
+                          
+                          <div className="relative px-4 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between gap-3">
+                            {/* Habit Name */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2.5 mb-1">
+                                <span className={`text-sm sm:text-base font-bold text-gray-900 truncate ${
+                                  isMilestone ? 'text-orange-900' : ''
+                                }`}>
+                                  {habit.name}
+                                </span>
+                                {isMilestone && (
+                                  <span className="text-xs px-2 py-0.5 bg-gradient-to-r from-orange-400 to-amber-400 text-white rounded-full font-bold shadow-sm">
+                                    🎯
+                                  </span>
+                                )}
+                              </div>
+                              {streak > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`h-1.5 rounded-full transition-all duration-500 ${
+                                    isHighStreak 
+                                      ? 'bg-gradient-to-r from-orange-400 to-amber-400' 
+                                      : 'bg-gradient-to-r from-primary to-indigo-500'
+                                  }`} style={{ width: `${Math.min((streak / 30) * 100, 100)}%` }} />
+                                  <span className="text-[10px] text-gray-400 font-medium">
+                                    {streak >= 30 ? '🔥' : streak >= 7 ? '⚡' : '✨'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Streak Number */}
+                            <div className="flex items-baseline gap-1.5 sm:gap-2 flex-shrink-0">
+                              <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums transition-colors duration-300 ${
+                                isMilestone
+                                  ? 'text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600'
+                                  : isHighStreak
+                                  ? 'text-orange-500'
+                                  : 'text-primary'
+                              }`}>
+                                {streak}
+                              </span>
+                              <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                {streak === 1 ? 'day' : 'days'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Footer hint for many habits */}
+                {habits.filter(h => h.is_active !== false).length > 4 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200/50 text-center">
+                    <p className="text-xs text-gray-400 font-medium">
+                      Scroll to see all habits
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -512,7 +587,7 @@ function DashboardContent() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center items-stretch sm:items-center animate-fade-in pt-8" style={{ animationDelay: '0.5s' }}>
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center items-stretch sm:items-center animate-fade-in pt-6 sm:pt-8" style={{ animationDelay: '0.5s' }}>
         <Link href="/checkin" className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
           <Button size="lg" className="w-full text-base sm:text-lg">
             Log Check-In

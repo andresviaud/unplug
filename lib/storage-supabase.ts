@@ -997,22 +997,44 @@ export async function syncAnimalProgressForHabit(habitId: string): Promise<void>
   }
 
   if (!userAnimal) {
-    // No animal for this habit yet, get the first animal from the animals table
-    const { data: firstAnimal } = await supabase
+    // No animal for this habit yet, assign a different animal based on habit ID
+    // This ensures each habit gets a unique animal
+    const { data: allAnimals } = await supabase
       .from('animals')
       .select('*')
       .order('order_index', { ascending: true })
-      .limit(1)
-      .single()
 
-    if (!firstAnimal) {
+    if (!allAnimals || allAnimals.length === 0) {
       console.error('No animals found in database')
       return
     }
 
+    // Get all existing animals for this user to see which ones are already assigned
+    const { data: existingUserAnimals } = await supabase
+      .from('user_animals')
+      .select('animal_id')
+      .eq('user_id', user.id)
+      .eq('is_completed', false)
+
+    const usedAnimalIds = new Set(existingUserAnimals?.map(ua => ua.animal_id) || [])
+    
+    // Find the first available animal that isn't already assigned to another habit
+    // If all animals are used, cycle through them based on habit ID hash
+    let selectedAnimal = allAnimals[0] // Default to first animal
+    
+    if (usedAnimalIds.size < allAnimals.length) {
+      // There are unused animals, pick the first one not in use
+      selectedAnimal = allAnimals.find(animal => !usedAnimalIds.has(animal.id)) || allAnimals[0]
+    } else {
+      // All animals are in use, assign based on habit ID hash for variety
+      const habitIdHash = habitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+      const animalIndex = habitIdHash % allAnimals.length
+      selectedAnimal = allAnimals[animalIndex]
+    }
+
     // Calculate target node index based on current streak (streak 0 = 0 nodes)
     // Make absolutely sure it matches streak exactly
-    const targetNodeIndex = Math.max(0, Math.min(Math.floor(streak), firstAnimal.total_nodes))
+    const targetNodeIndex = Math.max(0, Math.min(Math.floor(streak), selectedAnimal.total_nodes))
 
     // Create a new user_animal entry for this habit with the correct initial progress
     const { data: newUserAnimal, error } = await supabase
@@ -1020,9 +1042,9 @@ export async function syncAnimalProgressForHabit(habitId: string): Promise<void>
       .insert({
         user_id: user.id,
         habit_id: habitId,
-        animal_id: firstAnimal.id,
+        animal_id: selectedAnimal.id,
         current_node_index: targetNodeIndex, // Set to match streak immediately
-        is_completed: targetNodeIndex >= firstAnimal.total_nodes,
+        is_completed: targetNodeIndex >= selectedAnimal.total_nodes,
       })
       .select('*, animals(*)')
       .single()
@@ -1043,7 +1065,7 @@ export async function syncAnimalProgressForHabit(habitId: string): Promise<void>
       const { data: nextAnimal } = await supabase
         .from('animals')
         .select('*')
-        .gt('order_index', firstAnimal.order_index)
+        .gt('order_index', selectedAnimal.order_index)
         .order('order_index', { ascending: true })
         .limit(1)
         .single()
