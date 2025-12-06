@@ -1009,27 +1009,42 @@ export async function syncAnimalProgressForHabit(habitId: string): Promise<void>
       return
     }
 
-    // Get all existing animals for this user to see which ones are already assigned
+    // Get all existing animals for this user to see which ones are already assigned to OTHER habits
+    // We want each habit to have a different animal
     const { data: existingUserAnimals } = await supabase
       .from('user_animals')
-      .select('animal_id')
+      .select('animal_id, habit_id')
       .eq('user_id', user.id)
       .eq('is_completed', false)
 
-    const usedAnimalIds = new Set(existingUserAnimals?.map(ua => ua.animal_id) || [])
+    // Get animal IDs that are already assigned to OTHER habits (not this one)
+    const usedAnimalIds = new Set(
+      existingUserAnimals
+        ?.filter(ua => ua.habit_id !== habitId) // Exclude this habit
+        .map(ua => ua.animal_id) || []
+    )
     
     // Find the first available animal that isn't already assigned to another habit
-    // If all animals are used, cycle through them based on habit ID hash
+    // If all animals are used by other habits, assign based on habit ID hash for variety
     let selectedAnimal = allAnimals[0] // Default to first animal
     
     if (usedAnimalIds.size < allAnimals.length) {
-      // There are unused animals, pick the first one not in use
+      // There are unused animals, pick the first one not in use by other habits
       selectedAnimal = allAnimals.find(animal => !usedAnimalIds.has(animal.id)) || allAnimals[0]
     } else {
-      // All animals are in use, assign based on habit ID hash for variety
+      // All animals are in use by other habits, assign based on habit ID hash for variety
+      // This ensures different habits get different animals even if all are used
       const habitIdHash = habitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
       const animalIndex = habitIdHash % allAnimals.length
       selectedAnimal = allAnimals[animalIndex]
+      
+      // If this animal is already used by another habit, try the next one
+      let attempts = 0
+      while (usedAnimalIds.has(selectedAnimal.id) && attempts < allAnimals.length) {
+        const nextIndex = (animalIndex + attempts + 1) % allAnimals.length
+        selectedAnimal = allAnimals[nextIndex]
+        attempts++
+      }
     }
 
     // Calculate target node index based on current streak (streak 0 = 0 nodes)

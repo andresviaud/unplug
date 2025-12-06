@@ -88,6 +88,12 @@ export default function AnimalVisual({ habitId, habitName, className }: AnimalVi
     'Fox': '🦊',
     'Deer': '🦌',
     'Whale': '🐋',
+    'Elephant': '🐘',
+    'Lion': '🦁',
+    'Dolphin': '🐬',
+    'Bear': '🐻',
+    'Tiger': '🐯',
+    'Wolf': '🐺',
   }
 
   const emoji = animalEmojis[animal.name] || '🎨'
