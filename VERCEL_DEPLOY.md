@@ -100,3 +100,4 @@ After deployment, you need to add your Vercel URL to Supabase:
 - Just push new changes to GitHub
 - Vercel will automatically redeploy
 
+

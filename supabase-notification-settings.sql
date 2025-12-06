@@ -39,3 +39,4 @@ CREATE POLICY "Users can delete their own notification settings"
   FOR DELETE
   USING (auth.uid() = user_id);
 
+

@@ -20,3 +20,4 @@ ADD CONSTRAINT user_animals_user_habit_unique UNIQUE(user_id, habit_id);
 -- Note: This migration assumes existing user_animals will need to be manually migrated
 -- or deleted, as we can't automatically assign them to habits
 
+

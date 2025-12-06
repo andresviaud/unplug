@@ -16,6 +16,7 @@ export default function Navigation() {
     { href: '/checkin', label: 'Journal' },
     { href: '/challenges', label: 'Challenges' },
     { href: '/habits', label: 'Habits' },
+    { href: '/community', label: 'Community' },
     { href: '/trophies', label: 'Trophies' },
     { href: '/chat', label: 'Chat' },
     { href: '/settings', label: 'Settings' },

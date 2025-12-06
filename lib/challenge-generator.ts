@@ -214,3 +214,4 @@ export function generateDailyChallengesFromHabits(habits: Habit[]): DailyChallen
   return challenges
 }
 
+

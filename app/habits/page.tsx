@@ -38,6 +38,7 @@ export default function HabitsPage() {
   const [newHabitDescription, setNewHabitDescription] = useState('')
   const [newHabitXP, setNewHabitXP] = useState(20)
   const [newHabitStartDate, setNewHabitStartDate] = useState('')
+  const [newHabitIsPublic, setNewHabitIsPublic] = useState(false) // NEW: Visibility toggle
   const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
   const [celebration, setCelebration] = useState<{ show: boolean; message: string }>({ show: false, message: '' })
 
@@ -109,12 +110,14 @@ export default function HabitsPage() {
         description: newHabitDescription.trim() || undefined,
         xp_per_day: newHabitXP,
         start_date: newHabitStartDate,
+        is_public: newHabitIsPublic, // NEW: Include visibility setting
       })
       await loadHabits()
       setNewHabitName('')
       setNewHabitDescription('')
       setNewHabitXP(20)
       setNewHabitStartDate(getTodayEST())
+      setNewHabitIsPublic(false) // Reset to private
       setShowCreateForm(false)
       alert('Habit created successfully!')
     } catch (error: any) {
@@ -354,6 +357,24 @@ export default function HabitsPage() {
               <p className="text-xs text-gray-500 mt-2">
                 Select the date when you started this habit (can be in the past)
               </p>
+            </div>
+            <div>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={newHabitIsPublic}
+                  onChange={(e) => setNewHabitIsPublic(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                />
+                <div className="flex-1">
+                  <span className="block text-sm font-semibold text-gray-700">
+                    Make this habit public
+                  </span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    Share your progress with the community. Others can see and cheer you on! 🎉
+                  </span>
+                </div>
+              </label>
             </div>
             <Button 
               onClick={handleCreateHabit} 

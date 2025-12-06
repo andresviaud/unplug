@@ -6,7 +6,7 @@ import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
 import { useAuth } from '@/lib/useAuth'
-import { getTodayCheckIn, getUserStats, getChallengeCompletions, completeDailyChallengeById, undoDailyChallengeById, getHabits, getHabitStreak, getTodayEST, syncAllAnimalProgress, type DailyEntry, type UserStats, type Habit } from '@/lib/storage-supabase'
+import { getTodayCheckIn, getUserStats, getChallengeCompletions, completeDailyChallengeById, undoDailyChallengeById, getHabits, getAllHabitStreaks, getTodayEST, type DailyEntry, type UserStats, type Habit } from '@/lib/storage-supabase'
 import { generateDailyChallengesFromHabits, type DailyChallenge } from '@/lib/challenge-generator'
 import { PageErrorBoundary } from './page-error-boundary'
 import AnimalVisual from '@/components/AnimalVisual'
@@ -33,75 +33,64 @@ function DashboardContent() {
       return
     }
     
-      try {
-        setLoading(true)
-        const [checkIn, userStats, completions, userHabits] = await Promise.all([
-          getTodayCheckIn().catch(err => {
-            console.error('Error loading check-in:', err)
-            return null
-          }),
-          getUserStats().catch(err => {
-            console.error('Error loading stats:', err)
-            return { total_xp: 0, current_streak: 0, last_completion_date: null }
-          }),
-          getChallengeCompletions().catch(err => {
-            console.error('Error loading completions:', err)
-            return []
-          }),
-          getHabits().catch(err => {
-            console.error('Error loading habits:', err)
-            return []
-          }),
-        ])
-        setTodayCheckIn(checkIn)
-        setStats(userStats)
-        setTotalChallenges(completions.length)
-        setHabits(userHabits)
-        
-        // Sync all animal progress to ensure it matches streaks
-        await syncAllAnimalProgress().catch(err => {
-          console.error('Error syncing animal progress:', err)
-        })
-        
-        // Load individual habit streaks
-        const streaks: Record<string, number> = {}
-        for (const habit of userHabits) {
-          if (habit.is_active !== false) {
-            streaks[habit.id] = await getHabitStreak(habit.id).catch(() => 0)
-          }
-        }
+    try {
+      setLoading(true)
+      
+      // Load all data in parallel
+      const [checkIn, userStats, completions, userHabits] = await Promise.all([
+        getTodayCheckIn().catch(err => {
+          console.error('Error loading check-in:', err)
+          return null
+        }),
+        getUserStats().catch(err => {
+          console.error('Error loading stats:', err)
+          return { total_xp: 0, current_streak: 0, last_completion_date: null }
+        }),
+        getChallengeCompletions().catch(err => {
+          console.error('Error loading completions:', err)
+          return []
+        }),
+        getHabits().catch(err => {
+          console.error('Error loading habits:', err)
+          return []
+        }),
+      ])
+      
+      setTodayCheckIn(checkIn)
+      setStats(userStats)
+      setTotalChallenges(completions.length)
+      setHabits(userHabits)
+      
+      // Get all habit streaks in one batch query (much faster)
+      const activeHabits = userHabits.filter(h => h.is_active !== false)
+      if (activeHabits.length > 0) {
+        const habitIds = activeHabits.map(h => h.id)
+        const streaks = await getAllHabitStreaks(habitIds).catch(() => ({}))
         setHabitStreaks(streaks)
         
         // Generate daily challenges for each habit
-        if (userHabits.length > 0) {
-          const activeHabits = userHabits.filter(h => h.is_active !== false)
-          const challenges = generateDailyChallengesFromHabits(activeHabits)
-          setDailyChallenges(challenges)
-          
-          // Check which challenges are already completed today
-          const today = getTodayEST()
-          const completions = await getChallengeCompletions()
-          const todayCompletions = completions
-            .filter(c => c.date === today)
-            .map(c => c.challenge_id)
-          setCompletedChallengeIds(new Set(todayCompletions))
-        } else {
-          setDailyChallenges([])
-          setCompletedChallengeIds(new Set())
-        }
+        const challenges = generateDailyChallengesFromHabits(activeHabits)
+        setDailyChallenges(challenges)
         
-        // Load AI prompt if check-in exists
-        if (checkIn) {
-          try {
-            const response = await fetch('/api/ai-daily-prompt')
-            if (response.ok) {
-              const data = await response.json()
-              setAiPrompt(data.message)
-            }
-          } catch (error) {
-            console.error('Error loading AI prompt:', error)
-          }
-        }
+        // Check which challenges are already completed today
+        const today = getTodayEST()
+        const todayCompletions = completions
+          .filter(c => c.date === today)
+          .map(c => c.challenge_id)
+        setCompletedChallengeIds(new Set(todayCompletions))
+      } else {
+        setHabitStreaks({})
+        setDailyChallenges([])
+        setCompletedChallengeIds(new Set())
+      }
+      
+      // Load AI prompt if check-in exists (non-blocking)
+      if (checkIn) {
+        fetch('/api/ai-daily-prompt')
+          .then(response => response.ok ? response.json() : null)
+          .then(data => data && setAiPrompt(data.message))
+          .catch(error => console.error('Error loading AI prompt:', error))
+      }
     } catch (error: any) {
       console.error('Error loading data:', error)
       setError(error?.message || 'Failed to load data')
@@ -116,17 +105,16 @@ function DashboardContent() {
     }
   }, [user, authLoading])
 
-  // Listen for habit updates to refresh streaks immediately
+  // Listen for habit updates to refresh streaks immediately (optimized with batch query)
   useEffect(() => {
     const handleHabitUpdate = async () => {
       if (habits.length > 0) {
-        const streaks: Record<string, number> = {}
-        for (const habit of habits) {
-          if (habit.is_active !== false) {
-            streaks[habit.id] = await getHabitStreak(habit.id).catch(() => 0)
-          }
+        const activeHabits = habits.filter(h => h.is_active !== false)
+        if (activeHabits.length > 0) {
+          const habitIds = activeHabits.map(h => h.id)
+          const streaks = await getAllHabitStreaks(habitIds).catch(() => ({}))
+          setHabitStreaks(streaks)
         }
-        setHabitStreaks(streaks)
       }
     }
 
@@ -149,8 +137,10 @@ function DashboardContent() {
           return newSet
         })
         
-        // Reload data to show updated stats and animal progress
-        await loadData()
+        // Update stats without full reload (faster)
+        const updatedStats = await getUserStats().catch(() => stats)
+        setStats(updatedStats)
+        setTotalChallenges(prev => prev + 1)
         // Force animal visual to reload by triggering a state update
         window.dispatchEvent(new Event('animalProgressUpdate'))
       } else {
@@ -176,8 +166,10 @@ function DashboardContent() {
           return newSet
         })
         
-        // Reload data to show updated stats and animal progress
-        await loadData()
+        // Update stats without full reload (faster)
+        const updatedStats = await getUserStats().catch(() => stats)
+        setStats(updatedStats)
+        setTotalChallenges(prev => Math.max(0, prev - 1))
         window.dispatchEvent(new Event('animalProgressUpdate'))
       } else {
         alert(result.message || 'Failed to undo challenge')

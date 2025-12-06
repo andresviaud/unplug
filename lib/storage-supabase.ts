@@ -38,6 +38,7 @@ export interface Habit {
   start_date: string
   color?: string
   is_active: boolean
+  is_public?: boolean // NEW: If true, habit is visible in community feed
   created_at: string
   updated_at: string
 }
@@ -61,47 +62,19 @@ export async function getHabits(): Promise<Habit[]> {
   return data || []
 }
 
-// Sync animal progress for all active habits
-// This function is aggressive - it ALWAYS fixes any mismatches
+// Sync animal progress for all active habits (optimized - parallel execution)
 export async function syncAllAnimalProgress(): Promise<void> {
   const habits = await getHabits()
   const activeHabits = habits.filter(h => h.is_active !== false)
   
-  // Sync each habit's animal progress - do it twice to ensure it sticks
-  for (const habit of activeHabits) {
-    // First sync
-    await syncAnimalProgressForHabit(habit.id).catch(err => {
-      console.error(`Error syncing animal for habit ${habit.id}:`, err)
-    })
-    
-    // Double-check: get streak and verify it matches
-    const streak = await getHabitStreak(habit.id).catch(() => 0)
-    const supabase = createClient()
-    const { data: userAnimal } = await supabase
-      .from('user_animals')
-      .select('*, animals(*)')
-      .eq('user_id', (await getCurrentUser())?.id)
-      .eq('habit_id', habit.id)
-      .eq('is_completed', false)
-      .single()
-    
-    if (userAnimal) {
-      const totalNodes = (userAnimal.animals as any).total_nodes
-      const expectedIndex = Math.max(0, Math.min(Math.floor(streak), totalNodes))
-      
-      // If still wrong, force update directly
-      if (userAnimal.current_node_index !== expectedIndex) {
-        console.log(`Force fixing: habit=${habit.id}, current=${userAnimal.current_node_index}, expected=${expectedIndex}, streak=${streak}`)
-        await supabase
-          .from('user_animals')
-          .update({
-            current_node_index: expectedIndex,
-            is_completed: false,
-          })
-          .eq('id', userAnimal.id)
-      }
-    }
-  }
+  // Sync all habits in parallel for better performance
+  await Promise.all(
+    activeHabits.map(habit => 
+      syncAnimalProgressForHabit(habit.id).catch(err => {
+        console.error(`Error syncing animal for habit ${habit.id}:`, err)
+      })
+    )
+  )
 }
 
 export async function createHabit(habit: {
@@ -111,6 +84,7 @@ export async function createHabit(habit: {
   start_date: string
   color?: string
   is_active?: boolean
+  is_public?: boolean // NEW: Visibility setting for community
 }): Promise<Habit | null> {
   const user = await getCurrentUser()
   if (!user) {
@@ -128,6 +102,7 @@ export async function createHabit(habit: {
       start_date: habit.start_date,
       color: habit.color || null,
       is_active: habit.is_active !== undefined ? habit.is_active : true,
+      is_public: habit.is_public !== undefined ? habit.is_public : false, // Default to private
     })
     .select()
     .single()
@@ -219,6 +194,34 @@ export async function toggleHabitActive(habitId: string): Promise<void> {
 
   if (error) {
     console.error('Error toggling habit:', error)
+    throw new Error(error.message)
+  }
+}
+
+// Toggle habit visibility (public/private) for community feed
+export async function toggleHabitVisibility(habitId: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) return
+
+  const supabase = createClient()
+  // First get current state
+  const { data: habit } = await supabase
+    .from('habits')
+    .select('is_public')
+    .eq('id', habitId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!habit) return
+
+  const { error } = await supabase
+    .from('habits')
+    .update({ is_public: !habit.is_public })
+    .eq('id', habitId)
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error toggling habit visibility:', error)
     throw new Error(error.message)
   }
 }
@@ -399,6 +402,69 @@ export async function getHabitStreak(habitId: string): Promise<number> {
   }
 
   return streak
+}
+
+// Get streaks for all habits in one batch query (much faster)
+export async function getAllHabitStreaks(habitIds: string[]): Promise<Record<string, number>> {
+  const user = await getCurrentUser()
+  if (!user || habitIds.length === 0) return {}
+
+  const today = getTodayEST()
+  const supabase = createClient()
+  
+  // Get all logs for all habits in one query
+  const { data: allLogs } = await supabase
+    .from('habit_logs')
+    .select('habit_id, date')
+    .eq('user_id', user.id)
+    .in('habit_id', habitIds)
+    .order('date', { ascending: false })
+
+  if (!allLogs || allLogs.length === 0) {
+    return Object.fromEntries(habitIds.map(id => [id, 0]))
+  }
+
+  // Group logs by habit_id
+  const logsByHabit: Record<string, string[]> = {}
+  for (const log of allLogs) {
+    if (!logsByHabit[log.habit_id]) {
+      logsByHabit[log.habit_id] = []
+    }
+    logsByHabit[log.habit_id].push(log.date)
+  }
+
+  // Calculate streak for each habit
+  const streaks: Record<string, number> = {}
+  for (const habitId of habitIds) {
+    const logs = logsByHabit[habitId] || []
+    if (logs.length === 0) {
+      streaks[habitId] = 0
+      continue
+    }
+
+    const logDates = new Set(logs)
+    let streak = 0
+    let expectedDate = today
+
+    // Check if today is logged
+    if (!logDates.has(expectedDate)) {
+      const yesterday = new Date(expectedDate)
+      yesterday.setDate(yesterday.getDate() - 1)
+      expectedDate = yesterday.toISOString().split('T')[0]
+    }
+
+    // Count consecutive days
+    while (logDates.has(expectedDate)) {
+      streak++
+      const prevDate = new Date(expectedDate)
+      prevDate.setDate(prevDate.getDate() - 1)
+      expectedDate = prevDate.toISOString().split('T')[0]
+    }
+
+    streaks[habitId] = streak
+  }
+
+  return streaks
 }
 
 // ===== USER STATS =====
@@ -1047,36 +1113,18 @@ export async function syncAnimalProgressForHabit(habitId: string): Promise<void>
   } else {
     // Update node index to match streak EXACTLY (including 0)
     // ALWAYS update - this is the fix. No conditions, just update.
-    // Do it multiple times to ensure it sticks (database might have race conditions)
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const { error, data } = await supabase
-        .from('user_animals')
-        .update({
-          current_node_index: targetNodeIndex,
-          is_completed: false,
-        })
-        .eq('id', userAnimal.id)
-        .eq('user_id', user.id)
-        .eq('habit_id', habitId)
-        .select('current_node_index')
-        .single()
+    const { error } = await supabase
+      .from('user_animals')
+      .update({
+        current_node_index: targetNodeIndex,
+        is_completed: false,
+      })
+      .eq('id', userAnimal.id)
+      .eq('user_id', user.id)
+      .eq('habit_id', habitId)
 
-      if (error) {
-        console.error(`Error updating animal progress (attempt ${attempt + 1}):`, error)
-        if (attempt === 2) {
-          console.error('Final attempt failed. Attempted to set current_node_index to:', targetNodeIndex, 'for streak:', streak)
-        }
-      } else {
-        // Verify it was actually updated
-        if (data && data.current_node_index === targetNodeIndex) {
-          console.log(`Animal progress synced: streak=${streak}, nodes=${targetNodeIndex}`)
-          break
-        } else if (attempt < 2) {
-          // If it didn't update correctly, try again
-          await new Promise(resolve => setTimeout(resolve, 100))
-          continue
-        }
-      }
+    if (error) {
+      console.error('Error updating animal progress:', error)
     }
   }
 }
@@ -1105,18 +1153,21 @@ export interface UserAnimal {
 }
 
 // Get current active animal with progress for a specific habit
-// ALWAYS syncs progress with current streak before returning
-export async function getCurrentAnimal(habitId: string): Promise<{ animal: Animal; progress: UserAnimal } | null> {
+// Optionally syncs progress with current streak before returning (default: true)
+export async function getCurrentAnimal(habitId: string, syncFirst: boolean = true): Promise<{ animal: Animal; progress: UserAnimal } | null> {
   const user = await getCurrentUser()
   if (!user) return null
 
   const supabase = createClient()
 
-  // ALWAYS sync first to ensure progress is accurate
-  await syncAnimalProgressForHabit(habitId)
+  // Optionally sync first to ensure progress is accurate
+  if (syncFirst) {
+    await syncAnimalProgressForHabit(habitId).catch(err => {
+      console.error('Error syncing animal progress:', err)
+    })
+  }
 
   // Get the current active animal for this habit (not completed)
-  // Wait a tiny bit to ensure the sync has completed
   const { data: activeAnimal } = await supabase
     .from('user_animals')
     .select('*, animals(*)')
@@ -1128,65 +1179,9 @@ export async function getCurrentAnimal(habitId: string): Promise<{ animal: Anima
     .single()
 
   if (activeAnimal) {
-    // Double-check: if progress doesn't match streak EXACTLY (including 0), sync again
-    const currentStreak = await getHabitStreak(habitId)
-    const totalNodes = (activeAnimal.animals as any).total_nodes
-    const expectedIndex = Math.max(0, Math.min(Math.floor(currentStreak), totalNodes))
-    
-    // If it doesn't match, force sync and wait a bit for database to update
-    if (activeAnimal.current_node_index !== expectedIndex) {
-      console.log(`Mismatch detected: current_node_index=${activeAnimal.current_node_index}, expected=${expectedIndex}, streak=${currentStreak}`)
-      
-      // Force sync one more time to fix it
-      await syncAnimalProgressForHabit(habitId)
-      
-      // Wait a tiny bit for database to update
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Fetch again
-      const { data: syncedAnimal } = await supabase
-        .from('user_animals')
-        .select('*, animals(*)')
-        .eq('user_id', user.id)
-        .eq('habit_id', habitId)
-        .eq('is_completed', false)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .single()
-      
-      if (syncedAnimal) {
-        // Verify it's correct now
-        if (syncedAnimal.current_node_index !== expectedIndex) {
-          console.warn(`Still mismatched after sync: ${syncedAnimal.current_node_index} vs ${expectedIndex}`)
-        }
-        return {
-          animal: syncedAnimal.animals as Animal,
-          progress: syncedAnimal as UserAnimal,
-        }
-      }
-    }
-    
     return {
       animal: activeAnimal.animals as Animal,
       progress: activeAnimal as UserAnimal,
-    }
-  }
-
-  // If still no animal after sync, try one more time (might have been created)
-  const { data: retryAnimal } = await supabase
-    .from('user_animals')
-    .select('*, animals(*)')
-    .eq('user_id', user.id)
-    .eq('habit_id', habitId)
-    .eq('is_completed', false)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
-
-  if (retryAnimal) {
-    return {
-      animal: retryAnimal.animals as Animal,
-      progress: retryAnimal as UserAnimal,
     }
   }
 
@@ -1380,5 +1375,178 @@ export async function isAnimalCompleted(animalId: string): Promise<boolean> {
     .single()
 
   return !!data
+}
+
+// ===== COMMUNITY SUPPORT =====
+
+// Interface for public habit with user info and streak
+export interface PublicHabit {
+  id: string
+  habit_id: string
+  habit_name: string
+  habit_description?: string
+  user_id: string
+  user_email?: string
+  streak: number
+  xp_per_day: number
+  start_date: string
+  created_at: string
+  cheer_count: number
+  has_cheered: boolean // Whether current user has cheered this habit
+}
+
+// Get all public habits from the community (excluding current user's own habits)
+export async function getPublicHabits(): Promise<PublicHabit[]> {
+  const user = await getCurrentUser()
+  if (!user) return []
+
+  const supabase = createClient()
+
+  // Get all public habits (excluding current user's)
+  const { data: publicHabits, error: habitsError } = await supabase
+    .from('habits')
+    .select('id, name, description, user_id, xp_per_day, start_date, created_at')
+    .eq('is_public', true)
+    .eq('is_active', true)
+    .neq('user_id', user.id) // Exclude current user's habits
+    .order('created_at', { ascending: false })
+    .limit(50) // Limit to 50 most recent
+
+  if (habitsError || !publicHabits) {
+    console.error('Error fetching public habits:', habitsError)
+    return []
+  }
+
+  // Get streaks for all these habits
+  const habitIds = publicHabits.map(h => h.id)
+  const streaks: Record<string, number> = await getAllHabitStreaks(habitIds).catch(() => ({}))
+
+  // Get cheer counts and check if current user has cheered
+  const { data: allCheers } = await supabase
+    .from('cheers')
+    .select('habit_id, from_user_id')
+    .in('habit_id', habitIds)
+
+  // Count cheers per habit and check if user has cheered
+  const cheerCounts: Record<string, number> = {}
+  const userCheers: Set<string> = new Set()
+
+  if (allCheers) {
+    for (const cheer of allCheers) {
+      cheerCounts[cheer.habit_id] = (cheerCounts[cheer.habit_id] || 0) + 1
+      if (cheer.from_user_id === user.id) {
+        userCheers.add(cheer.habit_id)
+      }
+    }
+  }
+
+  // For now, we'll use anonymous display names
+  // In the future, you could create a user_profiles table with usernames
+  // For privacy, we'll just show "User" + first 4 chars of user_id
+  const userDisplayMap: Record<string, string> = {}
+  for (const habit of publicHabits) {
+    if (!userDisplayMap[habit.user_id]) {
+      userDisplayMap[habit.user_id] = `User ${habit.user_id.substring(0, 4)}`
+    }
+  }
+
+  // Build the result
+  return publicHabits.map(habit => ({
+    id: habit.id,
+    habit_id: habit.id,
+    habit_name: habit.name,
+    habit_description: habit.description || undefined,
+    user_id: habit.user_id,
+    user_email: userDisplayMap[habit.user_id] || 'Anonymous',
+    streak: streaks[habit.id] || 0,
+    xp_per_day: habit.xp_per_day,
+    start_date: habit.start_date,
+    created_at: habit.created_at,
+    cheer_count: cheerCounts[habit.id] || 0,
+    has_cheered: userCheers.has(habit.id),
+  }))
+}
+
+// Cheer (support) someone else's public habit
+export async function cheerHabit(habitId: string): Promise<{ success: boolean; message?: string }> {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { success: false, message: 'You must be logged in to cheer habits' }
+  }
+
+  const supabase = createClient()
+
+  // Verify the habit exists and is public
+  const { data: habit, error: habitError } = await supabase
+    .from('habits')
+    .select('id, user_id, is_public')
+    .eq('id', habitId)
+    .single()
+
+  if (habitError || !habit) {
+    return { success: false, message: 'Habit not found' }
+  }
+
+  // Prevent users from cheering their own habits
+  if (habit.user_id === user.id) {
+    return { success: false, message: 'You cannot cheer your own habit' }
+  }
+
+  // Verify habit is public
+  if (!habit.is_public) {
+    return { success: false, message: 'This habit is not public' }
+  }
+
+  // Check if user already cheered this habit
+  const { data: existingCheer } = await supabase
+    .from('cheers')
+    .select('id')
+    .eq('from_user_id', user.id)
+    .eq('habit_id', habitId)
+    .single()
+
+  if (existingCheer) {
+    return { success: false, message: 'You have already cheered this habit' }
+  }
+
+  // Create cheer
+  const { error: cheerError } = await supabase
+    .from('cheers')
+    .insert({
+      from_user_id: user.id,
+      to_user_id: habit.user_id,
+      habit_id: habitId,
+    })
+
+  if (cheerError) {
+    console.error('Error creating cheer:', cheerError)
+    return { success: false, message: cheerError.message }
+  }
+
+  return { success: true }
+}
+
+// Un-cheer (remove support) from a habit
+export async function uncheerHabit(habitId: string): Promise<{ success: boolean; message?: string }> {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { success: false, message: 'You must be logged in' }
+  }
+
+  const supabase = createClient()
+
+  // Delete the cheer
+  const { error } = await supabase
+    .from('cheers')
+    .delete()
+    .eq('from_user_id', user.id)
+    .eq('habit_id', habitId)
+
+  if (error) {
+    console.error('Error removing cheer:', error)
+    return { success: false, message: error.message }
+  }
+
+  return { success: true }
 }
 

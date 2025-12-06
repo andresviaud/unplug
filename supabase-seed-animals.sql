@@ -59,3 +59,4 @@ INSERT INTO animals (name, total_nodes, nodes, order_index) VALUES (
   4
 ) ON CONFLICT (name) DO NOTHING;
 
+

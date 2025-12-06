@@ -80,3 +80,4 @@ If the issue persists:
    ```
 3. Check the `current_node_index` value - it should match your streak
 
+

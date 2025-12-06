@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { isHabitLoggedToday, getHabitStreak, type Habit } from '@/lib/storage-supabase'
+import { isHabitLoggedToday, getHabitStreak, toggleHabitVisibility, type Habit } from '@/lib/storage-supabase'
 
 interface HabitCardSimpleProps {
   habit: Habit
@@ -24,6 +24,12 @@ export default function HabitCardSimple({
 }: HabitCardSimpleProps) {
   const [loggedToday, setLoggedToday] = useState(false)
   const [streak, setStreak] = useState(0)
+  const [isPublic, setIsPublic] = useState(habit.is_public || false)
+  const [toggling, setToggling] = useState(false)
+
+  useEffect(() => {
+    setIsPublic(habit.is_public || false)
+  }, [habit.is_public])
 
   useEffect(() => {
     const loadHabitData = async () => {
@@ -47,6 +53,21 @@ export default function HabitCardSimple({
     window.addEventListener('habitUpdated', handleHabitUpdate)
     return () => window.removeEventListener('habitUpdated', handleHabitUpdate)
   }, [habit.id, habit.start_date])
+
+  const handleToggleVisibility = async () => {
+    setToggling(true)
+    try {
+      await toggleHabitVisibility(habit.id)
+      setIsPublic(!isPublic)
+      // Notify parent to reload habits
+      window.dispatchEvent(new Event('habitUpdated'))
+    } catch (error: any) {
+      console.error('Error toggling visibility:', error)
+      alert('Failed to update visibility: ' + error.message)
+    } finally {
+      setToggling(false)
+    }
+  }
 
   const formatStartDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split('-')
@@ -82,6 +103,17 @@ export default function HabitCardSimple({
               <div className="flex items-center gap-2 text-gray-600">
                 <span className="text-sm">Started: {formatStartDate(habit.start_date)}</span>
               </div>
+              <div className="flex items-center gap-2">
+                {isPublic ? (
+                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-1">
+                    🌍 Public
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1">
+                    🔒 Private
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -93,24 +125,36 @@ export default function HabitCardSimple({
         )}
 
         <div className="flex gap-3 sm:flex-col sm:gap-2">
-          {loggedToday ? (
+          <div className="flex gap-2 flex-1">
+            {loggedToday ? (
+              <Button
+                onClick={() => onUnlogHabit(habit.id)}
+                size="lg"
+                variant="secondary"
+                className="flex-1 sm:flex-none sm:min-w-[140px]"
+              >
+                Undo
+              </Button>
+            ) : (
+              <Button
+                onClick={() => onLogHabit(habit.id)}
+                size="lg"
+                className="flex-1 sm:flex-none sm:min-w-[140px]"
+              >
+                Log Today
+              </Button>
+            )}
             <Button
-              onClick={() => onUnlogHabit(habit.id)}
-              size="lg"
+              onClick={handleToggleVisibility}
+              size="md"
               variant="secondary"
-              className="w-full sm:w-auto min-w-[140px]"
+              disabled={toggling}
+              className="flex-shrink-0"
+              title={isPublic ? 'Make private' : 'Make public'}
             >
-              Undo
+              {toggling ? '...' : isPublic ? '🔒' : '🌍'}
             </Button>
-          ) : (
-            <Button
-              onClick={() => onLogHabit(habit.id)}
-              size="lg"
-              className="w-full sm:w-auto min-w-[140px]"
-            >
-              Log Today
-            </Button>
-          )}
+          </div>
           <Button
             onClick={() => onDelete(habit.id)}
             size="md"

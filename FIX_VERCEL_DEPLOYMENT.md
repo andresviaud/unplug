@@ -116,3 +116,4 @@ After fixing:
    - Make sure `supabase-migration-animals-per-habit.sql` was run in your production Supabase
    - The `user_animals` table needs the `habit_id` column
 
+
