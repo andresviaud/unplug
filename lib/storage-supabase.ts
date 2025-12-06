@@ -914,7 +914,8 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
     }
 
     // Calculate target node index based on current streak (streak 0 = 0 nodes)
-    const targetNodeIndex = Math.max(0, Math.min(streak, firstAnimal.total_nodes))
+    // Make absolutely sure it matches streak exactly
+    const targetNodeIndex = Math.max(0, Math.min(Math.floor(streak), firstAnimal.total_nodes))
 
     // Create a new user_animal entry for this habit with the correct initial progress
     const { data: newUserAnimal, error } = await supabase
@@ -971,10 +972,12 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
 
   // Set node index to match the streak EXACTLY (capped at total nodes)
   // Streak of 0 = 0 nodes, streak of 1 = 1 node, streak of 2 = 2 nodes, etc.
-  const targetNodeIndex = Math.max(0, Math.min(streak, totalNodes))
+  // Make absolutely sure it's never negative and matches streak exactly
+  const targetNodeIndex = Math.max(0, Math.min(Math.floor(streak), totalNodes))
   const isCompleted = targetNodeIndex >= totalNodes
 
   // ALWAYS update - no conditions, just update to match streak exactly
+  // This is the single source of truth - streak determines nodes, period.
   if (isCompleted && !userAnimal.is_completed) {
     // Animal is complete, mark it as completed
     const { error } = await supabase
@@ -1012,7 +1015,7 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
     }
   } else {
     // Update node index to match streak EXACTLY (including 0)
-    // Always update, even if we think it's already correct
+    // ALWAYS update - this is the fix. No conditions, just update.
     const { error } = await supabase
       .from('user_animals')
       .update({
@@ -1020,9 +1023,15 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
         is_completed: false,
       })
       .eq('id', userAnimal.id)
+      .eq('user_id', user.id)
+      .eq('habit_id', habitId)
 
     if (error) {
       console.error('Error updating animal progress:', error)
+      console.error('Attempted to set current_node_index to:', targetNodeIndex, 'for streak:', streak)
+    } else {
+      // Log success for debugging
+      console.log(`Animal progress synced: streak=${streak}, nodes=${targetNodeIndex}`)
     }
   }
 }
@@ -1076,11 +1085,18 @@ export async function getCurrentAnimal(habitId: string): Promise<{ animal: Anima
   if (activeAnimal) {
     // Double-check: if progress doesn't match streak EXACTLY (including 0), sync again
     const currentStreak = await getHabitStreak(habitId)
-    const expectedIndex = Math.max(0, Math.min(currentStreak, (activeAnimal.animals as any).total_nodes))
+    const totalNodes = (activeAnimal.animals as any).total_nodes
+    const expectedIndex = Math.max(0, Math.min(Math.floor(currentStreak), totalNodes))
     
+    // If it doesn't match, force sync and wait a bit for database to update
     if (activeAnimal.current_node_index !== expectedIndex) {
+      console.log(`Mismatch detected: current_node_index=${activeAnimal.current_node_index}, expected=${expectedIndex}, streak=${currentStreak}`)
+      
       // Force sync one more time to fix it
       await syncAnimalProgressForHabit(habitId)
+      
+      // Wait a tiny bit for database to update
+      await new Promise(resolve => setTimeout(resolve, 100))
       
       // Fetch again
       const { data: syncedAnimal } = await supabase
@@ -1094,6 +1110,10 @@ export async function getCurrentAnimal(habitId: string): Promise<{ animal: Anima
         .single()
       
       if (syncedAnimal) {
+        // Verify it's correct now
+        if (syncedAnimal.current_node_index !== expectedIndex) {
+          console.warn(`Still mismatched after sync: ${syncedAnimal.current_node_index} vs ${expectedIndex}`)
+        }
         return {
           animal: syncedAnimal.animals as Animal,
           progress: syncedAnimal as UserAnimal,
