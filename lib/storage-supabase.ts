@@ -61,6 +61,19 @@ export async function getHabits(): Promise<Habit[]> {
   return data || []
 }
 
+// Sync animal progress for all active habits
+export async function syncAllAnimalProgress(): Promise<void> {
+  const habits = await getHabits()
+  const activeHabits = habits.filter(h => h.is_active !== false)
+  
+  // Sync each habit's animal progress
+  for (const habit of activeHabits) {
+    await syncAnimalProgressForHabit(habit.id).catch(err => {
+      console.error(`Error syncing animal for habit ${habit.id}:`, err)
+    })
+  }
+}
+
 export async function createHabit(habit: {
   name: string
   description?: string
@@ -92,6 +105,14 @@ export async function createHabit(habit: {
   if (error) {
     console.error('Error creating habit:', error)
     throw new Error(error.message)
+  }
+
+  // Initialize animal for this new habit
+  if (data) {
+    await syncAnimalProgressForHabit(data.id).catch(err => {
+      console.error('Error initializing animal for habit:', err)
+      // Don't throw - animal initialization is not critical
+    })
   }
 
   return data
@@ -126,6 +147,18 @@ export async function deleteHabit(habitId: string): Promise<void> {
   if (error) {
     console.error('Error deleting habit:', error)
     throw new Error(error.message)
+  }
+
+  // Delete all user_animals associated with this habit
+  const { error: animalsError } = await supabase
+    .from('user_animals')
+    .delete()
+    .eq('habit_id', habitId)
+    .eq('user_id', user.id)
+
+  if (animalsError) {
+    console.error('Error deleting user animals:', animalsError)
+    // Don't throw - animal deletion is not critical
   }
 
   // Finally, update user stats to recalculate XP and streak
@@ -231,6 +264,14 @@ export async function logHabit(habitId: string): Promise<{ success: boolean; mes
   // Update user stats (XP and streak)
   await updateUserStats()
 
+  // Sync animal progress for this habit based on streak
+  await syncAnimalProgressForHabit(habitId)
+
+  // Trigger UI update for animal visual (only in browser)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('animalProgressUpdate'))
+  }
+
   return { success: true }
 }
 
@@ -259,6 +300,14 @@ export async function unlogHabit(habitId: string): Promise<{ success: boolean; m
 
   // Update user stats (XP and streak will be recalculated)
   await updateUserStats()
+
+  // Sync animal progress for this habit based on streak
+  await syncAnimalProgressForHabit(habitId)
+
+  // Trigger UI update for animal visual (only in browser)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('animalProgressUpdate'))
+  }
 
   return { success: true }
 }
@@ -660,13 +709,15 @@ export async function completeDailyChallengeById(challengeId: string, xp: number
   await updateUserStats()
 
   // Update animal progress (add one node)
-  await progressAnimal()
+  // Note: Animal progress is now based on habit streaks, not challenge completions
+  // So we don't call progressAnimal() here anymore
 
   return { success: true }
 }
 
 // Complete today's daily challenge (legacy - for single challenge completion)
-// This updates daily_entries.is_completed, adds XP, updates streak, and progresses animal
+// This updates daily_entries.is_completed, adds XP, updates streak
+// Note: Animal progress is now based on habit streaks, not challenge completions
 export async function completeDailyChallenge(): Promise<{ success: boolean; message?: string }> {
   const user = await getCurrentUser()
   if (!user) {
@@ -723,7 +774,8 @@ export async function completeDailyChallenge(): Promise<{ success: boolean; mess
   await updateUserStats()
 
   // Update animal progress (add one node)
-  await progressAnimal()
+  // Note: Animal progress is now based on habit streaks, not challenge completions
+  // So we don't call progressAnimal() here anymore
 
   return { success: true }
 }
@@ -751,33 +803,8 @@ export async function undoDailyChallengeById(challengeId: string): Promise<{ suc
     return { success: false, message: challengeError.message }
   }
 
-  // Reverse animal progress (decrement node index by 1)
-  const { data: activeAnimal } = await supabase
-    .from('user_animals')
-    .select('*, animals(*)')
-    .eq('user_id', user.id)
-    .eq('is_completed', false)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
-
-  if (activeAnimal) {
-    const currentIndex = activeAnimal.current_node_index || 0
-    if (currentIndex > 0) {
-      // Decrement node index
-      const { error: animalError } = await supabase
-        .from('user_animals')
-        .update({
-          current_node_index: Math.max(0, currentIndex - 1),
-        })
-        .eq('id', activeAnimal.id)
-
-      if (animalError) {
-        console.error('Error reversing animal progress:', animalError)
-        // Continue anyway
-      }
-    }
-  }
+  // Note: Animal progress is now based on habit streaks, not challenge completions
+  // So we don't need to reverse animal progress here
 
   // Update user stats (XP will be recalculated without the challenge completion)
   await updateUserStats()
@@ -834,33 +861,8 @@ export async function undoDailyChallenge(): Promise<{ success: boolean; message?
     // Continue anyway - the main thing is to set is_completed to false
   }
 
-  // Reverse animal progress (decrement node index by 1)
-  const { data: activeAnimal } = await supabase
-    .from('user_animals')
-    .select('*, animals(*)')
-    .eq('user_id', user.id)
-    .eq('is_completed', false)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
-
-  if (activeAnimal) {
-    const currentIndex = activeAnimal.current_node_index || 0
-    if (currentIndex > 0) {
-      // Decrement node index
-      const { error: animalError } = await supabase
-        .from('user_animals')
-        .update({
-          current_node_index: Math.max(0, currentIndex - 1),
-        })
-        .eq('id', activeAnimal.id)
-
-      if (animalError) {
-        console.error('Error reversing animal progress:', animalError)
-        // Continue anyway
-      }
-    }
-  }
+  // Note: Animal progress is now based on habit streaks, not challenge completions
+  // So we don't need to reverse animal progress here
 
   // Update user stats (XP will be recalculated without the challenge completion)
   await updateUserStats()
@@ -869,24 +871,36 @@ export async function undoDailyChallenge(): Promise<{ success: boolean; message?
 }
 
 // Progress the current active animal by one node
-async function progressAnimal(): Promise<void> {
+// Sync animal progress for a specific habit based on its streak
+async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
   const user = await getCurrentUser()
   if (!user) return
 
   const supabase = createClient()
 
-  // Get the current active animal (not completed)
-  const { data: activeAnimal } = await supabase
+  // Get the habit streak
+  const streak = await getHabitStreak(habitId)
+  
+  // Get or create the animal for this habit
+  let { data: userAnimal, error: fetchError } = await supabase
     .from('user_animals')
     .select('*, animals(*)')
     .eq('user_id', user.id)
-    .eq('is_completed', false)
-    .order('created_at', { ascending: true })
-    .limit(1)
+    .eq('habit_id', habitId)
     .single()
 
-  if (!activeAnimal) {
-    // No active animal, get the first animal from the animals table
+  // If error is "PGRST116" (no rows returned), that's fine - we'll create one
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    console.error('Error fetching user_animal:', fetchError)
+    // Check if habit_id column exists (migration might not be run)
+    if (fetchError.message?.includes('column') && fetchError.message?.includes('habit_id')) {
+      console.error('ERROR: The database migration has not been run! Please run supabase-migration-animals-per-habit.sql in Supabase SQL Editor.')
+    }
+    return
+  }
+
+  if (!userAnimal) {
+    // No animal for this habit yet, get the first animal from the animals table
     const { data: firstAnimal } = await supabase
       .from('animals')
       .select('*')
@@ -899,50 +913,115 @@ async function progressAnimal(): Promise<void> {
       return
     }
 
-    // Create a new user_animal entry
-    const { error } = await supabase
+    // Calculate target node index based on current streak
+    const targetNodeIndex = Math.min(streak, firstAnimal.total_nodes)
+
+    // Create a new user_animal entry for this habit with the correct initial progress
+    const { data: newUserAnimal, error } = await supabase
       .from('user_animals')
       .insert({
         user_id: user.id,
+        habit_id: habitId,
         animal_id: firstAnimal.id,
-        current_node_index: 1,
-        is_completed: false,
+        current_node_index: targetNodeIndex, // Set to match streak immediately
+        is_completed: targetNodeIndex >= firstAnimal.total_nodes,
       })
+      .select('*, animals(*)')
+      .single()
 
-    if (error) {
+    if (error || !newUserAnimal) {
       console.error('Error creating user_animal:', error)
+      // Check if habit_id column exists
+      if (error?.message?.includes('column') && error?.message?.includes('habit_id')) {
+        console.error('ERROR: The database migration has not been run! Please run supabase-migration-animals-per-habit.sql in Supabase SQL Editor.')
+      }
+      return
     }
-    return
+
+    userAnimal = newUserAnimal
+    
+    // If the animal is already complete, start the next one
+    if (userAnimal.is_completed) {
+      const { data: nextAnimal } = await supabase
+        .from('animals')
+        .select('*')
+        .gt('order_index', firstAnimal.order_index)
+        .order('order_index', { ascending: true })
+        .limit(1)
+        .single()
+
+      if (nextAnimal) {
+        await supabase
+          .from('user_animals')
+          .insert({
+            user_id: user.id,
+            habit_id: habitId,
+            animal_id: nextAnimal.id,
+            current_node_index: 0,
+            is_completed: false,
+          })
+      }
+    }
+    
+    return // Animal created with correct progress, no need to update
   }
 
-  const animal = activeAnimal.animals as any
-  const currentIndex = activeAnimal.current_node_index || 0
+  const animal = userAnimal.animals as any
   const totalNodes = animal.total_nodes
 
-  if (currentIndex >= totalNodes) {
-    // Animal is complete, mark it as completed
-    const { error } = await supabase
-      .from('user_animals')
-      .update({
-        is_completed: true,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', activeAnimal.id)
+  // Set node index to match the streak (capped at total nodes)
+  const targetNodeIndex = Math.min(streak, totalNodes)
+  const isCompleted = targetNodeIndex >= totalNodes
 
-    if (error) {
-      console.error('Error completing animal:', error)
-    }
-  } else {
-    // Increment node index
-    const { error } = await supabase
-      .from('user_animals')
-      .update({
-        current_node_index: currentIndex + 1,
-      })
-      .eq('id', activeAnimal.id)
+  // Only update if the progress has changed
+  if (userAnimal.current_node_index !== targetNodeIndex || userAnimal.is_completed !== isCompleted) {
+    if (isCompleted && !userAnimal.is_completed) {
+      // Animal is complete, mark it as completed
+      const { error } = await supabase
+        .from('user_animals')
+        .update({
+          current_node_index: totalNodes,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', userAnimal.id)
 
-    if (error) {
-      console.error('Error updating animal progress:', error)
+      if (error) {
+        console.error('Error completing animal:', error)
+      } else {
+        // If this animal is complete, start the next animal for this habit
+        const { data: nextAnimal } = await supabase
+          .from('animals')
+          .select('*')
+          .gt('order_index', animal.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1)
+          .single()
+
+        if (nextAnimal) {
+          await supabase
+            .from('user_animals')
+            .insert({
+              user_id: user.id,
+              habit_id: habitId,
+              animal_id: nextAnimal.id,
+              current_node_index: 0,
+              is_completed: false,
+            })
+        }
+      }
+    } else if (!isCompleted) {
+      // Update node index to match streak
+      const { error } = await supabase
+        .from('user_animals')
+        .update({
+          current_node_index: targetNodeIndex,
+        })
+        .eq('id', userAnimal.id)
+
+      if (error) {
+        console.error('Error updating animal progress:', error)
+      }
     }
   }
 }
@@ -962,6 +1041,7 @@ export interface UserAnimal {
   id: string
   user_id: string
   animal_id: string
+  habit_id: string | null
   current_node_index: number
   is_completed: boolean
   created_at: string
@@ -969,18 +1049,23 @@ export interface UserAnimal {
   animals: Animal
 }
 
-// Get current active animal with progress
-export async function getCurrentAnimal(): Promise<{ animal: Animal; progress: UserAnimal } | null> {
+// Get current active animal with progress for a specific habit
+// ALWAYS syncs progress with current streak before returning
+export async function getCurrentAnimal(habitId: string): Promise<{ animal: Animal; progress: UserAnimal } | null> {
   const user = await getCurrentUser()
   if (!user) return null
 
+  // ALWAYS sync first to ensure progress is accurate
+  await syncAnimalProgressForHabit(habitId)
+
   const supabase = createClient()
 
-  // Get the current active animal (not completed)
+  // Get the current active animal for this habit (not completed)
   const { data: activeAnimal } = await supabase
     .from('user_animals')
     .select('*, animals(*)')
     .eq('user_id', user.id)
+    .eq('habit_id', habitId)
     .eq('is_completed', false)
     .order('created_at', { ascending: true })
     .limit(1)
@@ -993,39 +1078,25 @@ export async function getCurrentAnimal(): Promise<{ animal: Animal; progress: Us
     }
   }
 
-  // No active animal, get the first animal from the animals table
-  const { data: firstAnimal } = await supabase
-    .from('animals')
-    .select('*')
-    .order('order_index', { ascending: true })
+  // If still no animal after sync, try one more time (might have been created)
+  const { data: retryAnimal } = await supabase
+    .from('user_animals')
+    .select('*, animals(*)')
+    .eq('user_id', user.id)
+    .eq('habit_id', habitId)
+    .eq('is_completed', false)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
-  if (!firstAnimal) {
-    return null
+  if (retryAnimal) {
+    return {
+      animal: retryAnimal.animals as Animal,
+      progress: retryAnimal as UserAnimal,
+    }
   }
 
-  // Create a new user_animal entry
-  const { data: newUserAnimal, error } = await supabase
-    .from('user_animals')
-    .insert({
-      user_id: user.id,
-      animal_id: firstAnimal.id,
-      current_node_index: 0,
-      is_completed: false,
-    })
-    .select('*, animals(*)')
-    .single()
-
-  if (error || !newUserAnimal) {
-    console.error('Error creating user_animal:', error)
-    return null
-  }
-
-  return {
-    animal: newUserAnimal.animals as Animal,
-    progress: newUserAnimal as UserAnimal,
-  }
+  return null
 }
 
 // ===== NOTIFICATION SETTINGS =====

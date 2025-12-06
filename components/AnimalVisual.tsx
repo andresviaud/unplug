@@ -5,17 +5,19 @@ import Card from '@/components/Card'
 import { getCurrentAnimal, type Animal, type UserAnimal } from '@/lib/storage-supabase'
 
 interface AnimalVisualProps {
+  habitId: string
+  habitName?: string
   className?: string
 }
 
-export default function AnimalVisual({ className }: AnimalVisualProps) {
+export default function AnimalVisual({ habitId, habitName, className }: AnimalVisualProps) {
   const [animalData, setAnimalData] = useState<{ animal: Animal; progress: UserAnimal } | null>(null)
   const [loading, setLoading] = useState(true)
 
   const loadAnimal = async () => {
     try {
       setLoading(true)
-      const data = await getCurrentAnimal()
+      const data = await getCurrentAnimal(habitId)
       setAnimalData(data)
     } catch (error) {
       console.error('Error loading animal:', error)
@@ -32,11 +34,13 @@ export default function AnimalVisual({ className }: AnimalVisualProps) {
       loadAnimal()
     }
     window.addEventListener('animalProgressUpdate', handleUpdate)
+    window.addEventListener('habitUpdated', handleUpdate)
     
     return () => {
       window.removeEventListener('animalProgressUpdate', handleUpdate)
+      window.removeEventListener('habitUpdated', handleUpdate)
     }
-  }, [])
+  }, [habitId])
 
   if (loading) {
     return (
@@ -121,6 +125,11 @@ export default function AnimalVisual({ className }: AnimalVisualProps) {
     <Card className={className}>
       <div className="relative">
         <div className="mb-6 sm:mb-8">
+          {habitName && (
+            <div className="mb-3 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-bold inline-block">
+              {habitName}
+            </div>
+          )}
           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-3 tracking-tight">
             <span className="text-4xl sm:text-5xl">{emoji}</span>
             <span>{animal.name}</span>

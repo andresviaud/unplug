@@ -6,7 +6,7 @@ import Card from '@/components/Card'
 import StatCard from '@/components/StatCard'
 import Button from '@/components/Button'
 import { useAuth } from '@/lib/useAuth'
-import { getTodayCheckIn, getUserStats, getChallengeCompletions, completeDailyChallengeById, undoDailyChallengeById, getHabits, getHabitStreak, getTodayEST, type DailyEntry, type UserStats, type Habit } from '@/lib/storage-supabase'
+import { getTodayCheckIn, getUserStats, getChallengeCompletions, completeDailyChallengeById, undoDailyChallengeById, getHabits, getHabitStreak, getTodayEST, syncAllAnimalProgress, type DailyEntry, type UserStats, type Habit } from '@/lib/storage-supabase'
 import { generateDailyChallengesFromHabits, type DailyChallenge } from '@/lib/challenge-generator'
 import { PageErrorBoundary } from './page-error-boundary'
 import AnimalVisual from '@/components/AnimalVisual'
@@ -57,6 +57,11 @@ function DashboardContent() {
         setStats(userStats)
         setTotalChallenges(completions.length)
         setHabits(userHabits)
+        
+        // Sync all animal progress to ensure it matches streaks
+        await syncAllAnimalProgress().catch(err => {
+          console.error('Error syncing animal progress:', err)
+        })
         
         // Load individual habit streaks
         const streaks: Record<string, number> = {}
@@ -385,10 +390,24 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Animal Visual Section */}
-      <div className="mb-10 sm:mb-12 lg:mb-16 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <AnimalVisual />
-      </div>
+      {/* Animal Visual Section - One per habit */}
+      {habits.filter(h => h.is_active !== false).length > 0 && (
+        <div className="mb-10 sm:mb-12 lg:mb-16 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+          <div className="page-hero mb-8">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gradient tracking-tight">Your Animal Progress</h2>
+            <p className="text-base sm:text-lg text-gray-700 mt-3">
+              Each habit has its own animal. Complete your habits daily to fill in the nodes and unlock trophies!
+            </p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            {habits.filter(h => h.is_active !== false).map((habit, index) => (
+              <div key={habit.id} className="animate-fade-in" style={{ animationDelay: `${0.2 + index * 0.1}s` }}>
+                <AnimalVisual habitId={habit.id} habitName={habit.name} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 mb-10 sm:mb-12 lg:mb-16">
