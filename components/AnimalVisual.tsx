@@ -17,8 +17,36 @@ export default function AnimalVisual({ habitId, habitName, className }: AnimalVi
   const loadAnimal = async () => {
     try {
       setLoading(true)
+      
+      // ALWAYS sync first to ensure data is correct - this fixes any mismatches automatically
+      await syncAnimalProgressForHabit(habitId).catch(err => {
+        console.error('Error syncing animal:', err)
+      })
+      
+      // Small delay to ensure database has updated
+      await new Promise(resolve => setTimeout(resolve, 150))
+      
       const data = await getCurrentAnimal(habitId)
-      setAnimalData(data)
+      
+      // Double-check: if data exists, verify it matches streak exactly
+      if (data) {
+        const streak = await getHabitStreak(habitId).catch(() => 0)
+        const expectedNodes = Math.max(0, Math.min(Math.floor(streak), data.animal.total_nodes))
+        
+        if (data.progress.current_node_index !== expectedNodes) {
+          // Force sync one more time - this should fix it
+          await syncAnimalProgressForHabit(habitId)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Reload
+          const fixedData = await getCurrentAnimal(habitId)
+          setAnimalData(fixedData)
+        } else {
+          setAnimalData(data)
+        }
+      } else {
+        setAnimalData(data)
+      }
     } catch (error) {
       console.error('Error loading animal:', error)
     } finally {

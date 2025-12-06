@@ -62,15 +62,45 @@ export async function getHabits(): Promise<Habit[]> {
 }
 
 // Sync animal progress for all active habits
+// This function is aggressive - it ALWAYS fixes any mismatches
 export async function syncAllAnimalProgress(): Promise<void> {
   const habits = await getHabits()
   const activeHabits = habits.filter(h => h.is_active !== false)
   
-  // Sync each habit's animal progress
+  // Sync each habit's animal progress - do it twice to ensure it sticks
   for (const habit of activeHabits) {
+    // First sync
     await syncAnimalProgressForHabit(habit.id).catch(err => {
       console.error(`Error syncing animal for habit ${habit.id}:`, err)
     })
+    
+    // Double-check: get streak and verify it matches
+    const streak = await getHabitStreak(habit.id).catch(() => 0)
+    const supabase = createClient()
+    const { data: userAnimal } = await supabase
+      .from('user_animals')
+      .select('*, animals(*)')
+      .eq('user_id', (await getCurrentUser())?.id)
+      .eq('habit_id', habit.id)
+      .eq('is_completed', false)
+      .single()
+    
+    if (userAnimal) {
+      const totalNodes = (userAnimal.animals as any).total_nodes
+      const expectedIndex = Math.max(0, Math.min(Math.floor(streak), totalNodes))
+      
+      // If still wrong, force update directly
+      if (userAnimal.current_node_index !== expectedIndex) {
+        console.log(`Force fixing: habit=${habit.id}, current=${userAnimal.current_node_index}, expected=${expectedIndex}, streak=${streak}`)
+        await supabase
+          .from('user_animals')
+          .update({
+            current_node_index: expectedIndex,
+            is_completed: false,
+          })
+          .eq('id', userAnimal.id)
+      }
+    }
   }
 }
 
@@ -872,7 +902,8 @@ export async function undoDailyChallenge(): Promise<{ success: boolean; message?
 
 // Progress the current active animal by one node
 // Sync animal progress for a specific habit based on its streak
-async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
+// This function ALWAYS fixes any mismatches automatically
+export async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
   const user = await getCurrentUser()
   if (!user) return
 
@@ -1016,22 +1047,36 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
   } else {
     // Update node index to match streak EXACTLY (including 0)
     // ALWAYS update - this is the fix. No conditions, just update.
-    const { error } = await supabase
-      .from('user_animals')
-      .update({
-        current_node_index: targetNodeIndex,
-        is_completed: false,
-      })
-      .eq('id', userAnimal.id)
-      .eq('user_id', user.id)
-      .eq('habit_id', habitId)
+    // Do it multiple times to ensure it sticks (database might have race conditions)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error, data } = await supabase
+        .from('user_animals')
+        .update({
+          current_node_index: targetNodeIndex,
+          is_completed: false,
+        })
+        .eq('id', userAnimal.id)
+        .eq('user_id', user.id)
+        .eq('habit_id', habitId)
+        .select('current_node_index')
+        .single()
 
-    if (error) {
-      console.error('Error updating animal progress:', error)
-      console.error('Attempted to set current_node_index to:', targetNodeIndex, 'for streak:', streak)
-    } else {
-      // Log success for debugging
-      console.log(`Animal progress synced: streak=${streak}, nodes=${targetNodeIndex}`)
+      if (error) {
+        console.error(`Error updating animal progress (attempt ${attempt + 1}):`, error)
+        if (attempt === 2) {
+          console.error('Final attempt failed. Attempted to set current_node_index to:', targetNodeIndex, 'for streak:', streak)
+        }
+      } else {
+        // Verify it was actually updated
+        if (data && data.current_node_index === targetNodeIndex) {
+          console.log(`Animal progress synced: streak=${streak}, nodes=${targetNodeIndex}`)
+          break
+        } else if (attempt < 2) {
+          // If it didn't update correctly, try again
+          await new Promise(resolve => setTimeout(resolve, 100))
+          continue
+        }
+      }
     }
   }
 }
