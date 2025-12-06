@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Card from '@/components/Card'
-import { getCurrentAnimal, type Animal, type UserAnimal } from '@/lib/storage-supabase'
+import { getCurrentAnimal, syncAnimalProgressForHabit, getHabitStreak, type Animal, type UserAnimal } from '@/lib/storage-supabase'
 
 interface AnimalVisualProps {
   habitId: string
