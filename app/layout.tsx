@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import NotificationManager from '@/components/NotificationManager'
 
 export const metadata: Metadata = {
   title: 'Cambiora - Break Destructive Habits, Build Transformational Change',
@@ -20,6 +21,7 @@ export default function RootLayout({
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }} />
         </div>
+        <NotificationManager />
         <Navigation />
         <main className="min-h-screen pb-12 relative">
           {children}

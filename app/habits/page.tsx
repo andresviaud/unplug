@@ -1,10 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { createHabit, getHabits, deleteHabit, logHabit, getHabitStreak, isHabitLoggedToday, getStats, getHistoricalXP, getTotalHistoricalXP, toggleHabitActive, getTodayEST } from '@/lib/storage'
-import type { Habit, HistoricalXP } from '@/lib/storage'
+import HabitCardSimple from './HabitCardSimple'
+import Celebration from '@/components/Celebration'
+import { 
+  createHabit, 
+  getHabits, 
+  deleteHabit, 
+  logHabit, 
+  unlogHabit,
+  toggleHabitActive, 
+  getTodayEST,
+  getHabitStreak,
+  type Habit
+} from '@/lib/storage-supabase'
 
 const EXAMPLE_HABITS = [
   { name: 'Quit Alcohol', description: 'Stay alcohol-free', xpPerDay: 25 },
@@ -16,21 +28,71 @@ const EXAMPLE_HABITS = [
 ]
 
 export default function HabitsPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [habits, setHabits] = useState<Habit[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [showHistoricalXP, setShowHistoricalXP] = useState(false)
-  const [showInactive, setShowInactive] = useState(false) // Toggle to show/hide inactive habits
-  const [errorMessages, setErrorMessages] = useState<Record<string, string>>({}) // Error messages for each habit
+  const [loading, setLoading] = useState(true)
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitDescription, setNewHabitDescription] = useState('')
   const [newHabitXP, setNewHabitXP] = useState(20)
-  const [newHabitStartDate, setNewHabitStartDate] = useState(getTodayEST())
+  const [newHabitStartDate, setNewHabitStartDate] = useState('')
+  const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
+  const [celebration, setCelebration] = useState<{ show: boolean; message: string }>({ show: false, message: '' })
 
+  // Initialize auth and start date
   useEffect(() => {
-    setHabits(getHabits())
+    const init = async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Auth error:', error)
+        }
+        setUser(session?.user ?? null)
+        setAuthLoading(false)
+        try {
+          setNewHabitStartDate(getTodayEST())
+        } catch (dateError) {
+          console.error('Date error:', dateError)
+          const today = new Date().toISOString().split('T')[0]
+          setNewHabitStartDate(today)
+        }
+      } catch (error) {
+        console.error('Error initializing:', error)
+        setAuthLoading(false)
+        const today = new Date().toISOString().split('T')[0]
+        setNewHabitStartDate(today)
+      }
+    }
+    init()
   }, [])
 
-  const handleCreateHabit = () => {
+  // Load habits when user is available
+  useEffect(() => {
+    if (user) {
+      loadHabits()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
+
+  const loadHabits = async () => {
+    try {
+      setLoading(true)
+      const data = await getHabits()
+      setHabits(data)
+    } catch (error: any) {
+      console.error('Error loading habits:', error)
+      alert('Error loading habits: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateHabit = async () => {
     if (!newHabitName.trim()) {
       alert('Please enter a habit name')
       return
@@ -41,83 +103,180 @@ export default function HabitsPage() {
       return
     }
 
-    const habit = createHabit({
-      name: newHabitName.trim(),
-      description: newHabitDescription.trim() || undefined,
-      xpPerDay: newHabitXP,
-      startDate: newHabitStartDate,
-    })
-
-    setHabits(getHabits())
-    setNewHabitName('')
-    setNewHabitDescription('')
-    setNewHabitXP(20)
-    setNewHabitStartDate(getTodayEST())
-    setShowCreateForm(false)
+    try {
+      await createHabit({
+        name: newHabitName.trim(),
+        description: newHabitDescription.trim() || undefined,
+        xp_per_day: newHabitXP,
+        start_date: newHabitStartDate,
+      })
+      await loadHabits()
+      setNewHabitName('')
+      setNewHabitDescription('')
+      setNewHabitXP(20)
+      setNewHabitStartDate(getTodayEST())
+      setShowCreateForm(false)
+      alert('Habit created successfully!')
+    } catch (error: any) {
+      console.error('Error creating habit:', error)
+      alert(`Error creating habit: ${error.message}\n\nMake sure you are logged in.`)
+    }
   }
 
-  const handleUseExample = (example: typeof EXAMPLE_HABITS[0]) => {
-    const habit = createHabit({
-      name: example.name,
-      description: example.description,
-      xpPerDay: example.xpPerDay,
-      startDate: getTodayEST(),
-    })
-
-    setHabits(getHabits())
+  const handleUseExample = async (example: typeof EXAMPLE_HABITS[0]) => {
+    try {
+      await createHabit({
+        name: example.name,
+        description: example.description,
+        xp_per_day: example.xpPerDay,
+        start_date: getTodayEST(),
+      })
+      await loadHabits()
+      alert('Habit created successfully!')
+    } catch (error: any) {
+      alert('Error creating habit: ' + error.message)
+    }
   }
 
-  const handleLogHabit = (habitId: string) => {
-    // Clear any existing error message for this habit
-    setErrorMessages(prev => {
-      const newMessages = { ...prev }
-      delete newMessages[habitId]
-      return newMessages
-    })
-
-    const result = logHabit(habitId)
-    
-    if (!result.success && result.message) {
-      // Show error message
-      setErrorMessages(prev => ({
-        ...prev,
-        [habitId]: result.message || '',
-      }))
+  const handleLogHabit = async (habitId: string) => {
+    try {
+      // Get current streak before logging
+      const oldStreak = await getHabitStreak(habitId)
       
-      // Clear error message after 5 seconds
-      setTimeout(() => {
-        setErrorMessages(prev => {
-          const newMessages = { ...prev }
-          delete newMessages[habitId]
-          return newMessages
-        })
-      }, 5000)
-    } else {
-      // Success - refresh habits to update UI
-      setHabits(getHabits())
+      const result = await logHabit(habitId)
+      if (!result.success && result.message) {
+        setErrorMessages(prev => ({
+          ...prev,
+          [habitId]: result.message || '',
+        }))
+        setTimeout(() => {
+          setErrorMessages(prev => {
+            const newMessages = { ...prev }
+            delete newMessages[habitId]
+            return newMessages
+          })
+        }, 5000)
+      } else {
+        // Success! Reload habits to update UI (streaks will be recalculated)
+        await loadHabits()
+        
+        // Get new streak after logging
+        const newStreak = await getHabitStreak(habitId)
+        const habit = habits.find(h => h.id === habitId)
+        
+        // Notify dashboard to update streaks
+        window.dispatchEvent(new Event('habitUpdated'))
+        
+        // Celebrate with different messages based on streak milestones
+        let message = 'Habit Logged! 🎉'
+        if (newStreak === 1) {
+          message = 'Day 1 Complete! 🚀'
+        } else if (newStreak === 7) {
+          message = '7 Day Streak! 🔥'
+        } else if (newStreak === 30) {
+          message = '30 Day Streak! 🌟'
+        } else if (newStreak === 100) {
+          message = '100 Day Streak! 💎'
+        } else if (newStreak > oldStreak && newStreak % 10 === 0) {
+          message = `${newStreak} Day Streak! 🎊`
+        } else if (newStreak > oldStreak) {
+          message = `${newStreak} Day Streak! 🔥`
+        }
+        
+        setCelebration({ show: true, message })
+      }
+    } catch (error: any) {
+      alert('Error logging habit: ' + error.message)
     }
   }
 
-  const handleDeleteHabit = (habitId: string) => {
+  const handleUnlogHabit = async (habitId: string) => {
+    try {
+      const result = await unlogHabit(habitId)
+      if (!result.success && result.message) {
+        setErrorMessages(prev => ({
+          ...prev,
+          [habitId]: result.message || '',
+        }))
+        setTimeout(() => {
+          setErrorMessages(prev => {
+            const newMessages = { ...prev }
+            delete newMessages[habitId]
+            return newMessages
+          })
+        }, 5000)
+      } else {
+        // Success! Reload habits to update UI (streaks will be recalculated)
+        await loadHabits()
+        
+        // Notify dashboard to update streaks
+        window.dispatchEvent(new Event('habitUpdated'))
+      }
+    } catch (error: any) {
+      alert('Error unlogging habit: ' + error.message)
+    }
+  }
+
+  const handleDeleteHabit = async (habitId: string) => {
     if (confirm('Are you sure you want to delete this habit? This will also delete all its logs.')) {
-      deleteHabit(habitId)
-      setHabits(getHabits())
+      try {
+        await deleteHabit(habitId)
+        await loadHabits()
+      } catch (error: any) {
+        alert('Error deleting habit: ' + error.message)
+      }
     }
   }
 
-  const handleToggleActive = (habitId: string) => {
-    toggleHabitActive(habitId)
-    setHabits(getHabits())
+  const handleToggleActive = async (habitId: string) => {
+    try {
+      await toggleHabitActive(habitId)
+      await loadHabits()
+    } catch (error: any) {
+      alert('Error toggling habit: ' + error.message)
+    }
   }
 
-  // Filter habits based on active state
-  const activeHabits = habits.filter(h => h.isActive !== false)
-  const inactiveHabits = habits.filter(h => h.isActive === false)
-  const displayedHabits = showInactive ? habits : activeHabits
+  // Show loading state
+  if (authLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <Card>
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold text-gray-900">Please Sign In</h1>
+            <p className="text-gray-600">You need to be logged in to view and create habits.</p>
+            <Button onClick={() => router.push('/auth/login')} size="lg">
+              Go to Sign In
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  const activeHabits = habits.filter(h => h.is_active !== false)
+  const displayedHabits = activeHabits
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-      <div className="text-center mb-12 sm:mb-16 animate-fade-in">
+    <>
+      <Celebration 
+        show={celebration.show} 
+        message={celebration.message}
+        onComplete={() => setCelebration({ show: false, message: '' })}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className="text-center mb-12 sm:mb-16 animate-fade-in">
         <h1 className="text-5xl sm:text-6xl font-extrabold text-gradient mb-6 tracking-tight">Habit Trackers</h1>
         <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto font-light leading-relaxed px-4">
           Break destructive habits and build transformational, long-term change through daily micro-actions.
@@ -133,22 +292,6 @@ export default function HabitsPage() {
         >
           {showCreateForm ? 'Cancel' : '+ Create New Habit'}
         </Button>
-        <Button
-          onClick={() => setShowHistoricalXP(!showHistoricalXP)}
-          size="lg"
-          variant="secondary"
-        >
-          {showHistoricalXP ? 'Hide' : '📊 View Historical XP'}
-        </Button>
-        {inactiveHabits.length > 0 && (
-          <Button
-            onClick={() => setShowInactive(!showInactive)}
-            size="lg"
-            variant="secondary"
-          >
-            {showInactive ? 'Hide Inactive' : `Show Inactive (${inactiveHabits.length})`}
-          </Button>
-        )}
       </div>
 
       {/* Create Habit Form */}
@@ -160,25 +303,25 @@ export default function HabitsPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
                 Habit Name *
               </label>
-                  <input
-                    type="text"
-                    value={newHabitName}
-                    onChange={(e) => setNewHabitName(e.target.value)}
-                    placeholder="e.g., Quit Alcohol, Exercise Daily"
-                    className="input-premium"
-                  />
+              <input
+                type="text"
+                value={newHabitName}
+                onChange={(e) => setNewHabitName(e.target.value)}
+                placeholder="e.g., Quit Alcohol, Exercise Daily"
+                className="input-premium"
+              />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
                 Description (Optional)
               </label>
-                  <input
-                    type="text"
-                    value={newHabitDescription}
-                    onChange={(e) => setNewHabitDescription(e.target.value)}
-                    placeholder="Brief description of your habit"
-                    className="input-premium"
-                  />
+              <input
+                type="text"
+                value={newHabitDescription}
+                onChange={(e) => setNewHabitDescription(e.target.value)}
+                placeholder="Brief description of your habit"
+                className="input-premium"
+              />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
@@ -212,8 +355,13 @@ export default function HabitsPage() {
                 Select the date when you started this habit (can be in the past)
               </p>
             </div>
-            <Button onClick={handleCreateHabit} size="lg" className="w-full">
-              Create Habit
+            <Button 
+              onClick={handleCreateHabit} 
+              size="lg" 
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? 'Creating...' : 'Create Habit'}
             </Button>
           </div>
         </Card>
@@ -240,239 +388,41 @@ export default function HabitsPage() {
         </Card>
       )}
 
-      {/* Historical XP View */}
-      {showHistoricalXP && (
-        <Card className="mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Historical XP Points</h2>
-          <HistoricalXPView />
+      {/* User Habits List */}
+      {displayedHabits.length > 0 ? (
+        <div className="space-y-6">
+          {displayedHabits.map((habit, index) => (
+            <HabitCardSimple
+              key={habit.id}
+              habit={habit}
+              index={index}
+              errorMessage={errorMessages[habit.id]}
+              onLogHabit={handleLogHabit}
+              onUnlogHabit={handleUnlogHabit}
+              onDelete={handleDeleteHabit}
+            />
+          ))}
+        </div>
+      ) : (
+        <Card className="relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
+          <div className="relative text-center py-12 sm:py-16">
+            <div className="text-6xl sm:text-7xl mb-6 opacity-60 animate-float">🎯</div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 tracking-tight">No Habits Yet</h2>
+            <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+              Start your transformation journey by creating your first habit. Every great change begins with a single step.
+            </p>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              size="lg"
+              className="shadow-premium"
+            >
+              + Create Your First Habit
+            </Button>
+          </div>
         </Card>
       )}
-
-      {/* User Habits List */}
-      {displayedHabits.length > 0 && !showHistoricalXP && (
-        <div className="space-y-6">
-          {displayedHabits.map((habit, index) => {
-            const streak = getHabitStreak(habit.id)
-            const loggedToday = isHabitLoggedToday(habit.id)
-            const errorMessage = errorMessages[habit.id]
-            // Format date string (YYYY-MM-DD) directly to avoid timezone issues
-            const formatStartDate = (dateStr: string) => {
-              const [year, month, day] = dateStr.split('-')
-              const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-              return date.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-              })
-            }
-            const startDate = formatStartDate(habit.startDate)
-            
-            return (
-              <Card key={habit.id} hover className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.1}s` }}>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-4 mb-2">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{habit.name}</h3>
-                        <span className="px-3 sm:px-4 py-1 sm:py-1.5 gradient-primary text-white rounded-full text-xs sm:text-sm font-bold shadow-md whitespace-nowrap flex-shrink-0">
-                          +{habit.xpPerDay} XP/day
-                        </span>
-                      </div>
-                      {habit.description && (
-                        <p className="text-gray-700 text-base sm:text-lg leading-relaxed break-words mb-3">
-                          {habit.description}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">🔥</span>
-                          <span className="font-bold text-gray-900">{streak} day streak</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <span className="text-sm">Started: {startDate}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  {errorMessage && (
-                    <div className="error-message">
-                      <p className="error-message-text">{errorMessage}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3 sm:flex-col sm:gap-2">
-                    {loggedToday ? (
-                      <div className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-2xl font-bold text-center shadow-premium text-sm sm:text-base">
-                        ✓ Logged Today
-                      </div>
-                    ) : (
-                      <Button
-                        onClick={() => handleLogHabit(habit.id)}
-                        size="lg"
-                        className="w-full sm:w-auto min-w-[140px]"
-                      >
-                        Log Today
-                      </Button>
-                    )}
-                    <Button
-                      onClick={() => handleToggleActive(habit.id)}
-                      size="md"
-                      variant="secondary"
-                      className="w-full sm:w-auto"
-                    >
-                      {habit.isActive !== false ? 'Deactivate' : 'Activate'}
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteHabit(habit.id)}
-                      size="md"
-                      variant="secondary"
-                      className="w-full sm:w-auto"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   )
 }
-
-function HistoricalXPView() {
-  const [historicalXP, setHistoricalXP] = useState<HistoricalXP[]>([])
-  const [filteredXP, setFilteredXP] = useState<HistoricalXP[]>([])
-  const [filterStartDate, setFilterStartDate] = useState('')
-  const [filterEndDate, setFilterEndDate] = useState(getTodayEST())
-
-  useEffect(() => {
-    const xp = getHistoricalXP()
-    setHistoricalXP(xp)
-    setFilteredXP(xp)
-    
-    // Set default start date to 30 days ago
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    setFilterStartDate(thirtyDaysAgo.toISOString().split('T')[0])
-  }, [])
-
-  useEffect(() => {
-    if (filterStartDate && filterEndDate) {
-      const filtered = historicalXP.filter(xp => 
-        xp.date >= filterStartDate && xp.date <= filterEndDate
-      )
-      setFilteredXP(filtered)
-    } else {
-      setFilteredXP(historicalXP)
-    }
-  }, [filterStartDate, filterEndDate, historicalXP])
-
-  const totalXP = filteredXP.reduce((sum, xp) => sum + xp.xp, 0)
-  const totalHistoricalXP = getTotalHistoricalXP()
-
-  // Group by date
-  const groupedByDate = filteredXP.reduce((acc, xp) => {
-    if (!acc[xp.date]) {
-      acc[xp.date] = []
-    }
-    acc[xp.date].push(xp)
-    return acc
-  }, {} as Record<string, HistoricalXP[]>)
-
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a))
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl border-2 border-primary/20">
-          <div className="text-sm text-gray-600 mb-1">Total Historical XP</div>
-          <div className="text-3xl font-bold text-primary">{totalHistoricalXP.toLocaleString()}</div>
-        </div>
-        <div className="p-4 bg-gradient-to-r from-green-400/10 to-green-500/5 rounded-2xl border-2 border-green-400/20">
-          <div className="text-sm text-gray-600 mb-1">XP in Selected Period</div>
-          <div className="text-3xl font-bold text-green-600">{totalXP.toLocaleString()}</div>
-        </div>
-      </div>
-
-      {/* Date Filter */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Start Date
-          </label>
-          <input
-            type="date"
-            value={filterStartDate}
-            onChange={(e) => setFilterStartDate(e.target.value)}
-            className="input-premium"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            End Date
-          </label>
-          <input
-            type="date"
-            value={filterEndDate}
-            onChange={(e) => setFilterEndDate(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            className="input-premium"
-          />
-        </div>
-      </div>
-
-      {/* Historical XP List */}
-      <div className="max-h-[500px] overflow-y-auto custom-scrollbar space-y-4">
-        {sortedDates.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No XP earned in this period. Start logging your habits to earn XP!
-          </div>
-        ) : (
-          sortedDates.map(date => {
-            const xpEntries = groupedByDate[date]
-            const dayTotal = xpEntries.reduce((sum, xp) => sum + xp.xp, 0)
-            // Format date string (YYYY-MM-DD) directly to avoid timezone issues
-            const [year, month, day] = date.split('-')
-            const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-            const formattedDate = dateObj.toLocaleDateString('en-US', {
-              weekday: 'short',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })
-
-            return (
-              <div key={date} className="p-4 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="font-bold text-gray-900">{formattedDate}</div>
-                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full font-bold">
-                    +{dayTotal} XP
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {xpEntries.map((xp, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className={xp.source === 'habit' ? 'text-blue-600' : 'text-purple-600'}>
-                          {xp.source === 'habit' ? '🎯' : '🏆'}
-                        </span>
-                        <span className="text-gray-700">{xp.sourceName}</span>
-                      </div>
-                      <span className="font-semibold text-gray-900">+{xp.xp} XP</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
-    </div>
-  )
-}
-

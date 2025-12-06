@@ -3,30 +3,35 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/lib/useAuth'
+import Button from './Button'
 
 export default function Navigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, loading, signOut } = useAuth()
 
   const navLinks = [
     { href: '/', label: 'Dashboard' },
     { href: '/checkin', label: 'Journal' },
     { href: '/challenges', label: 'Challenges' },
     { href: '/habits', label: 'Habits' },
+    { href: '/trophies', label: 'Trophies' },
     { href: '/chat', label: 'Chat' },
+    { href: '/settings', label: 'Settings' },
   ]
 
   return (
-    <nav className="glass sticky top-0 z-50 border-b border-white/20 shadow-sm">
+    <nav className="glass sticky top-0 z-50 border-b border-white/30 shadow-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-20 min-w-0">
+        <div className="flex justify-between items-center h-18 sm:h-20 lg:h-22 min-w-0">
           <Link href="/" className="text-2xl sm:text-3xl font-bold text-gradient hover:scale-105 transition-transform duration-300 flex-shrink-0">
             Cambiora
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-2 lg:gap-6 flex-shrink-0">
-            {navLinks.map((link) => (
+          <div className="hidden md:flex gap-2 lg:gap-6 items-center flex-shrink-0">
+            {user && navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -42,6 +47,24 @@ export default function Navigation() {
                 )}
               </Link>
             ))}
+            {!loading && (
+              user ? (
+                <Button
+                  onClick={signOut}
+                  variant="secondary"
+                  size="sm"
+                  className="ml-2"
+                >
+                  Sign Out
+                </Button>
+              ) : (
+                <Link href="/auth/login">
+                  <Button variant="secondary" size="sm" className="ml-2">
+                    Sign In
+                  </Button>
+                </Link>
+              )
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -72,7 +95,7 @@ export default function Navigation() {
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 animate-fade-in">
             <div className="flex flex-col gap-2 mt-2">
-              {navLinks.map((link) => (
+              {user && navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -86,6 +109,27 @@ export default function Navigation() {
                   {link.label}
                 </Link>
               ))}
+              {!loading && (
+                user ? (
+                  <button
+                    onClick={() => {
+                      signOut()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="px-4 py-3 rounded-2xl font-semibold transition-all duration-300 text-base text-gray-600 hover:text-primary hover:bg-primary/5 text-left"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 rounded-2xl font-semibold transition-all duration-300 text-base text-gray-600 hover:text-primary hover:bg-primary/5"
+                  >
+                    Sign In
+                  </Link>
+                )
+              )}
             </div>
           </div>
         )}
