@@ -1477,10 +1477,28 @@ export async function getPublicHabits(): Promise<PublicHabit[]> {
     }
   }
 
-  // For now, we'll use anonymous display names
-  // In the future, you could create a user_profiles table with usernames
-  // For privacy, we'll just show "User" + first 4 chars of user_id
+  // Get user emails using database function
+  const uniqueUserIds = Array.from(new Set(publicHabits.map(h => h.user_id)))
   const userDisplayMap: Record<string, string> = {}
+  
+  if (uniqueUserIds.length > 0) {
+    try {
+      // Call the database function to get user emails
+      const { data: userEmails, error: emailError } = await supabase
+        .rpc('get_user_emails', { user_ids: uniqueUserIds })
+      
+      if (!emailError && userEmails) {
+        for (const userEmail of userEmails) {
+          userDisplayMap[userEmail.user_id] = userEmail.email || 'Anonymous'
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user emails:', error)
+      // Fallback to anonymous names if function doesn't exist yet
+    }
+  }
+  
+  // Fallback: if emails not available, use anonymous names
   for (const habit of publicHabits) {
     if (!userDisplayMap[habit.user_id]) {
       userDisplayMap[habit.user_id] = `User ${habit.user_id.substring(0, 4)}`

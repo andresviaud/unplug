@@ -82,21 +82,28 @@ export default function AnimalVisual({ habitId, habitName, className }: AnimalVi
       ? JSON.parse(animal.nodes) 
       : []
 
-  // Animal emojis for better visual recognition
+  // Animal emojis for better visual recognition (case-insensitive matching)
   const animalEmojis: Record<string, string> = {
-    'Bird': '🐦',
-    'Fox': '🦊',
-    'Deer': '🦌',
-    'Whale': '🐋',
-    'Elephant': '🐘',
-    'Lion': '🦁',
-    'Dolphin': '🐬',
-    'Bear': '🐻',
-    'Tiger': '🐯',
-    'Wolf': '🐺',
+    'bird': '🐦',
+    'fox': '🦊',
+    'deer': '🦌',
+    'whale': '🐋',
+    'elephant': '🐘',
+    'lion': '🦁',
+    'dolphin': '🐬',
+    'bear': '🐻',
+    'tiger': '🐯',
+    'wolf': '🐺',
   }
 
-  const emoji = animalEmojis[animal.name] || '🎨'
+  // Match emoji case-insensitively
+  const animalNameLower = (animal.name || '').toLowerCase().trim()
+  const emoji = animalEmojis[animalNameLower] || '🎨'
+  
+  // Debug: log if emoji not found (remove in production)
+  if (!animalEmojis[animalNameLower]) {
+    console.log('Animal emoji not found for:', animal.name, 'normalized:', animalNameLower)
+  }
 
   // Create smooth SVG path using quadratic curves for better animal shapes
   const createSmoothPath = (nodeList: Array<{ x: number; y: number }>, closed: boolean = true) => {
