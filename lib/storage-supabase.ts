@@ -969,11 +969,13 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
   const animal = userAnimal.animals as any
   const totalNodes = animal.total_nodes
 
-  // Set node index to match the streak (capped at total nodes)
+  // Set node index to match the streak EXACTLY (capped at total nodes)
+  // Streak of 1 = 1 node filled, streak of 2 = 2 nodes filled, etc.
   const targetNodeIndex = Math.min(streak, totalNodes)
   const isCompleted = targetNodeIndex >= totalNodes
 
-  // Only update if the progress has changed
+  // ALWAYS update to ensure it matches the streak exactly
+  // This fixes any discrepancies
   if (userAnimal.current_node_index !== targetNodeIndex || userAnimal.is_completed !== isCompleted) {
     if (isCompleted && !userAnimal.is_completed) {
       // Animal is complete, mark it as completed
@@ -1011,7 +1013,7 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
         }
       }
     } else if (!isCompleted) {
-      // Update node index to match streak
+      // Update node index to match streak EXACTLY
       const { error } = await supabase
         .from('user_animals')
         .update({
@@ -1021,6 +1023,21 @@ async function syncAnimalProgressForHabit(habitId: string): Promise<void> {
 
       if (error) {
         console.error('Error updating animal progress:', error)
+      }
+    }
+  } else {
+    // Even if we think it's correct, force update to ensure accuracy
+    // This handles edge cases where the database might be out of sync
+    if (userAnimal.current_node_index !== targetNodeIndex) {
+      const { error } = await supabase
+        .from('user_animals')
+        .update({
+          current_node_index: targetNodeIndex,
+        })
+        .eq('id', userAnimal.id)
+
+      if (error) {
+        console.error('Error force-updating animal progress:', error)
       }
     }
   }
@@ -1055,12 +1072,13 @@ export async function getCurrentAnimal(habitId: string): Promise<{ animal: Anima
   const user = await getCurrentUser()
   if (!user) return null
 
+  const supabase = createClient()
+
   // ALWAYS sync first to ensure progress is accurate
   await syncAnimalProgressForHabit(habitId)
 
-  const supabase = createClient()
-
   // Get the current active animal for this habit (not completed)
+  // Wait a tiny bit to ensure the sync has completed
   const { data: activeAnimal } = await supabase
     .from('user_animals')
     .select('*, animals(*)')
@@ -1072,6 +1090,31 @@ export async function getCurrentAnimal(habitId: string): Promise<{ animal: Anima
     .single()
 
   if (activeAnimal) {
+    // Double-check: if progress doesn't match streak, sync again
+    const currentStreak = await getHabitStreak(habitId)
+    if (activeAnimal.current_node_index !== currentStreak && currentStreak <= (activeAnimal.animals as any).total_nodes) {
+      // Force sync one more time
+      await syncAnimalProgressForHabit(habitId)
+      
+      // Fetch again
+      const { data: syncedAnimal } = await supabase
+        .from('user_animals')
+        .select('*, animals(*)')
+        .eq('user_id', user.id)
+        .eq('habit_id', habitId)
+        .eq('is_completed', false)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single()
+      
+      if (syncedAnimal) {
+        return {
+          animal: syncedAnimal.animals as Animal,
+          progress: syncedAnimal as UserAnimal,
+        }
+      }
+    }
+    
     return {
       animal: activeAnimal.animals as Animal,
       progress: activeAnimal as UserAnimal,
