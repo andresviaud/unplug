@@ -442,23 +442,28 @@ function DashboardContent() {
       )}
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-14 sm:mb-18 lg:mb-24">
-        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <StatCard
-            label="Total XP"
-            value={stats.total_xp}
-            icon={<span>⭐</span>}
-          />
+      <div className="mb-14 sm:mb-18 lg:mb-24">
+        {/* Top Row: XP and Challenges */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <StatCard
+              label="Total XP"
+              value={stats.total_xp}
+              icon={<span>⭐</span>}
+            />
+          </div>
+          <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <StatCard
+              label="Challenges Completed"
+              value={totalChallenges}
+              icon={<span>🎯</span>}
+            />
+          </div>
         </div>
-        <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <StatCard
-            label="Challenges Completed"
-            value={totalChallenges}
-            icon={<span>🎯</span>}
-          />
-        </div>
+
+        {/* Bottom: Habit Streaks Card */}
         {habits.filter(h => h.is_active !== false).length > 0 ? (
-          <div className="animate-fade-in sm:col-span-2 lg:col-span-1" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <Card hover className="group h-full flex flex-col relative overflow-hidden">
               {/* Decorative background elements */}
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-400/20 via-red-400/20 to-orange-500/20 rounded-full blur-3xl -mr-20 -mt-20 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
@@ -568,7 +573,7 @@ function DashboardContent() {
             </Card>
           </div>
         ) : (
-          <div className="animate-fade-in sm:col-span-2 lg:col-span-1" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <Card className="group relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-16 -mt-16" />
               <div className="relative text-center py-8 sm:py-10">
